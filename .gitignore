@@ -5,3 +5,5 @@ v_llm/biomistral_clinical_lora_v2*/
 v_llm/biomistral_clinical_lora_v2_merged*/
 *.gguf
 *.safetensors
+.env
+venv/
