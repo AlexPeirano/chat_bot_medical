@@ -4,6 +4,7 @@ import readchar
 from datetime import datetime
 import json
 import os
+from rapidfuzz import fuzz, process
 
 # seuils de grossesses en semaine
 GROSSESSE_EARLY_THRESHOLD = 4  
@@ -16,16 +17,143 @@ GROSSESSE_EXAMPLE_LT4 = 3
 GROSSESSE_EXAMPLE_4_12 = 8
 GROSSESSE_EXAMPLE_GT12 = 16
 
+# Seuils pour fuzzy matching (scores 0-100)
+FUZZY_THRESHOLD_EXACT = 90      # Seuil pour correspondance quasi-exacte
+FUZZY_THRESHOLD_PARTIAL = 75    # Seuil pour correspondance partielle
+FUZZY_THRESHOLD_KEYWORD = 80    # Seuil pour mots-clés de population
+
+# Dictionnaire d'acronymes médicaux courants
+MEDICAL_ACRONYMS = {
+    # Anatomie
+    "fid": "fosse iliaque droite",
+    "fig": "fosse iliaque gauche",
+    "fid droite": "fosse iliaque droite",
+    "fig gauche": "fosse iliaque gauche",
+    
+    # Examens
+    "irm": "imagerie par résonance magnétique",
+    "tdm": "tomodensitométrie",
+    "ct": "scanner",
+    "rx": "radiographie",
+    "echo": "échographie",
+    "us": "échographie",
+    
+    # Pathologies thorax
+    "ep": "embolie pulmonaire",
+    "oap": "œdème aigu pulmonaire",
+    "bpco": "bronchopneumopathie chronique obstructive",
+    "htap": "hypertension artérielle pulmonaire",
+    
+    # Pathologies digestif
+    "rgo": "reflux gastro-œsophagien",
+    "mici": "maladie inflammatoire chronique intestinale",
+    "ulh": "ulcère gastro-duodénal",
+    
+    # Symptômes
+    "sad": "syndrome abdominal aigu",
+    "sca": "syndrome coronarien aigu",
+    "avc": "accident vasculaire cérébral",
+    "ait": "accident ischémique transitoire",
+    
+    # Anatomie générale
+    "hcd": "hypocondre droit",
+    "hcg": "hypocondre gauche",
+    "epigastre": "épigastre",
+    "hypogastre": "hypogastre",
+}
+
+def _expand_acronyms(texte):
+    """
+    Remplace les acronymes médicaux par leur forme complète.
+    
+    Args:
+        texte: Texte contenant possiblement des acronymes
+    
+    Returns:
+        Texte avec acronymes expansés
+    
+    Exemple:
+        "douleur FID" → "douleur fosse iliaque droite FID"
+        (garde l'acronyme original pour compatibilité)
+    """
+    texte_expanded = texte
+    texte_lower = texte.lower()
+    
+    # Chercher chaque acronyme dans le texte
+    for acronym, full_form in MEDICAL_ACRONYMS.items():
+        # Pattern pour trouver l'acronyme en tant que mot complet
+        pattern = r'\b' + re.escape(acronym) + r'\b'
+        
+        # Si l'acronyme est trouvé
+        if re.search(pattern, texte_lower):
+            # Ajouter la forme complète après l'acronyme (sans le remplacer)
+            # Exemple: "FID" devient "FID (fosse iliaque droite)"
+            replacement = f"{acronym} ({full_form})"
+            texte_expanded = re.sub(
+                pattern, 
+                replacement, 
+                texte_expanded, 
+                flags=re.IGNORECASE
+            )
+    
+    return texte_expanded
+
+
+def _fuzzy_match_symptom(texte_norm, symptom_label, threshold=FUZZY_THRESHOLD_PARTIAL):
+    """
+    Vérifie si un symptôme est présent dans le texte avec fuzzy matching.
+    
+    Args:
+        texte_norm: Texte normalisé (minuscules, sans accents)
+        symptom_label: Label du symptôme à chercher
+        threshold: Seuil de similarité (0-100)
+    
+    Returns:
+        (matched: bool, score: float)
+    """
+    symptom_norm = _normalize_text(symptom_label)
+    
+    # Méthode 1: Correspondance exacte (rapide)
+    if symptom_norm in texte_norm:
+        return True, 100
+    
+    # Méthode 2: Fuzzy matching sur phrases
+    # Découper le texte en segments (phrases/morceaux)
+    segments = re.split(r'[,;.]', texte_norm)
+    segments = [s.strip() for s in segments if s.strip()]
+    
+    # Chercher le meilleur match
+    best_score = 0
+    for segment in segments:
+        # Token sort ratio: insensible à l'ordre des mots
+        score = fuzz.token_sort_ratio(symptom_norm, segment)
+        best_score = max(best_score, score)
+        
+        # Si score très élevé, pas besoin de continuer
+        if score >= FUZZY_THRESHOLD_EXACT:
+            return True, score
+    
+    # Méthode 3: Partial ratio sur le texte complet (pour symptômes courts)
+    partial_score = fuzz.partial_ratio(symptom_norm, texte_norm)
+    best_score = max(best_score, partial_score)
+    
+    return best_score >= threshold, best_score
+
+
 def analyse_texte_medical(texte):
     """Analyse le texte libre du médecin pour extraire les informations détectées.
 
     Améliorations :
+    - expansion des acronymes médicaux (FID → fosse iliaque droite)
     - normalisation ASCII (suppression des accents) pour faire des recherches plus robustes,
     - utilisation de motifs avec bornes de mots et groupes nommés,
     - contrôles de plausibilité sur les valeurs numériques extraites.
     """
-    # Normaliser le texte pour les recherches : enlever les accents et travailler en ascii minuscule
-    t_norm = unicodedata.normalize("NFKD", texte)
+    # Étape 1: Expanser les acronymes médicaux
+    texte_expanded = _expand_acronyms(texte)
+    
+    # Étape 2: Normaliser le texte pour les recherches : enlever les accents et travailler en ascii minuscule
+    t_norm = unicodedata.normalize("NFKD", texte_expanded)
     t_norm = t_norm.encode("ascii", "ignore").decode("ascii").lower()
 
     # Précompiler patterns
@@ -39,6 +167,63 @@ def analyse_texte_medical(texte):
     age = int(age_match.group('age')) if age_match else None
     if age is not None and not (0 <= age <= 120):
         age = None
+
+    # Détection automatique de la population basée sur l'âge
+    population = None
+    if age is not None:
+        if age < 18:
+            population = "enfant"
+        elif 18 <= age < 65:
+            population = "adulte"
+        else:
+            population = "personne_agee"
+    
+    # Detection explicite des mots-clés (priorité sur l'âge automatique)
+    # Les mots-clés permettent de détecter la population même sans âge explicite
+    # Utilise regex ET fuzzy matching pour plus de robustesse
+    
+    # Mots-clés de population
+    keywords_enfant = ["enfant", "pediatrique", "nourrisson", "bebe", "nouveau-ne", "adolescent"]
+    keywords_adulte = ["adulte", "jeune adulte"]
+    keywords_agee = ["personne agee", "personne âgée", "senior", "geriatrique"]
+    
+    # Vérifier avec regex d'abord (rapide)
+    if re.search(r"\b(?:enfant|pediatr\w*|nourrisson|bebe|nouveau[- ]?ne|adolescent)\b", t_norm):
+        population = "enfant"
+    elif re.search(r"\b(?:adulte|jeune adulte)\b", t_norm):
+        population = "adulte"
+    elif re.search(r"\b(?:personne agee|age[e]?|senior|geriatr\w*)\b", t_norm):
+        population = "personne_agee"
+    else:
+        # Fuzzy matching en fallback pour typos ou variations
+        best_match = None
+        best_score = 0
+        best_category = None
+        
+        for keyword in keywords_enfant:
+            score = fuzz.partial_ratio(_normalize_text(keyword), t_norm)
+            if score > best_score:
+                best_score = score
+                best_match = keyword
+                best_category = "enfant"
+        
+        for keyword in keywords_adulte:
+            score = fuzz.partial_ratio(_normalize_text(keyword), t_norm)
+            if score > best_score:
+                best_score = score
+                best_match = keyword
+                best_category = "adulte"
+        
+        for keyword in keywords_agee:
+            score = fuzz.partial_ratio(_normalize_text(keyword), t_norm)
+            if score > best_score:
+                best_score = score
+                best_match = keyword
+                best_category = "personne_agee"
+        
+        # Appliquer si score suffisant
+        if best_score >= FUZZY_THRESHOLD_KEYWORD and best_category:
+            population = best_category
 
     # detection du sexe
     if re.search(r"\bpatiente\b", t_norm):
@@ -70,6 +255,7 @@ def analyse_texte_medical(texte):
     # Détections binaires (patterns ascii simplifiés)
     return {
         "age": age,
+        "population": population,
         "sexe": sexe,
         "grossesse": grossesse_detectee,
         "grossesse_sem": semaines,
@@ -637,9 +823,12 @@ def _match_best_entry(entries, positives, patient_info):
         if neg_items & positives:
             score -= len(neg_items & positives) * 2  # Pénalité forte
         
-        # Bonus si la population correspond
+        # Bonus si la population correspond (priorité à la détection automatique)
         populations = e.get("populations") or []
-        if patient_info.get("age"):
+        detected_population = patient_info.get("population")
+        if detected_population and detected_population in populations:
+            score += 1.0  # Bonus fort si population détectée correspond
+        elif patient_info.get("age"):  # Fallback sur l'âge si population non détectée
             age = patient_info["age"]
             if age < 18 and "enfant" in populations:
                 score += 0.5
@@ -651,7 +840,7 @@ def _match_best_entry(entries, positives, patient_info):
         if patient_info.get("sexe") == "f" and "femme" in populations:
             score += 0.3
         if patient_info.get("grossesse") and "enceinte" in populations:
-            score += 1.0
+            score += 2.0  # Bonus très fort pour grossesse (prioritaire sur adulte)
         
         if score > best_score:
             best_score = score
@@ -668,6 +857,13 @@ def chatbot_from_json(system):
 
     if f["age"]:
         print(f"Âge détecté : {f['age']} ans")
+    if f.get("population"):
+        population_labels = {
+            "enfant": "Enfant",
+            "adulte": "Adulte",
+            "personne_agee": "Personne âgée"
+        }
+        print(f"Population détectée : {population_labels.get(f['population'], f['population'])}")
     if f["sexe"]:
         print(f"Sexe détecté : {'femme' if f['sexe']=='f' else 'homme'}")
 
@@ -687,22 +883,11 @@ def chatbot_from_json(system):
             key = _normalize_key(s)
             all_symptoms_map[key] = s
     
-    # Pré-remplir automatiquement depuis le texte
+    # Pré-remplir automatiquement depuis le texte avec fuzzy matching
     for key, original_label in all_symptoms_map.items():
-        # Détection : normaliser le label original et chercher dans le texte
-        label_normalized = _normalize_text(original_label)
-        label_words = [w for w in label_normalized.split() if len(w) > 2]
-        
-        # Exiger au moins 50% des mots + au moins 2 mots si le label en a plusieurs
-        if len(label_words) == 0:
-            answers[key] = False
-        elif len(label_words) == 1:
-            # Un seul mot : correspondance exacte
-            answers[key] = label_words[0] in t_norm
-        else:
-            # Plusieurs mots : au moins 50% doivent matcher
-            matches = sum(1 for w in label_words if w in t_norm)
-            answers[key] = matches >= max(2, len(label_words) * 0.5)
+        # Utiliser fuzzy matching pour détecter le symptôme
+        matched, score = _fuzzy_match_symptom(t_norm, original_label)
+        answers[key] = matched
 
     # Construire l'ensemble initial des réponses positives
     positives = {k for k, v in answers.items() if v}
@@ -914,6 +1099,13 @@ def chatbot_cephalees():
 
     if f["age"]:
         print(f"Âge détecté : {f['age']} ans")
+    if f.get("population"):
+        population_labels = {
+            "enfant": "Enfant",
+            "adulte": "Adulte",
+            "personne_agee": "Personne âgée"
+        }
+        print(f"Population détectée : {population_labels.get(f['population'], f['population'])}")
     if f["sexe"]:
         print(f"Sexe détecté : {'femme' if f['sexe']=='f' else 'homme'}")
 
