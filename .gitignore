@@ -7,3 +7,6 @@ v_llm/biomistral_clinical_lora_v2_merged*/
 *.safetensors
 .env
 venv/
+v_llm/src/guideline_resolver.py
+v_llm/src/main2.py
+v_llm/src/ollama2.py
