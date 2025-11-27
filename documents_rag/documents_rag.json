@@ -1,0 +1,22 @@
+[
+  {
+    "id": "thorax_bruits_anormaux_rx_face_v1",
+    "text": "ID : thorax_bruits_anormaux_rx_face_v1\nSystème : thorax\nPathologie : bruits respiratoires anormaux\nModalité recommandée : radiographie thoracique de face (1ère intention)\nPopulation : adulte\nSymptômes : bruits respiratoires anormaux, sibilants, crépitants\nIndications positives : bilan initial des bruits respiratoires anormaux, suspicion pneumopathie infectieuse\nIndications négatives : \nRésumé : Radio quasi systématique; passer au scanner si la radiographie ne répond pas à la question. La priorisation dépend du tableau; suspicion de pneumopathie infectieuse = semi-urgence.\nUrgence : rapide (<6h)\nIonisant : oui\nProduit de contraste : non\nPriorité : priorité 2\nDose : I\nSynonymes : radio thorax face, CXR face\nSource : ADERIM (2025)\n-- Fin fiche thorax_bruits_anormaux_rx_face_v1 --"
+  },
+  {
+    "id": "thorax_bruits_anormaux_ct_sans_injection_v1",
+    "text": "ID : thorax_bruits_anormaux_ct_sans_injection_v1\nSystème : thorax\nPathologie : bruits respiratoires anormaux\nModalité recommandée : scanner thoracique sans injection (2e intention)\nPopulation : adulte\nSymptômes : bruits respiratoires anormaux, anomalie non caractérisée à la radio\nIndications positives : radiographie non contributive, clarification lésionnelle\nIndications négatives : \nRésumé : Indiqué selon le contexte clinique ou si la radiographie ne répond pas à la question.\nUrgence : rapide (<6h)\nIonisant : oui\nProduit de contraste : non\nPriorité : priorité 2\nDose : II\nSynonymes : CT thorax sans injection\nSource : ADERIM (2025)\n-- Fin fiche thorax_bruits_anormaux_ct_sans_injection_v1 --"
+  },
+  {
+    "id": "thorax_douleur_enfant_rx_v1",
+    "text": "ID : thorax_douleur_enfant_rx_v1\nSystème : thorax\nPathologie : douleur thoracique (enfant)\nModalité recommandée : radiographie thoracique (1ère intention)\nPopulation : enfant\nSymptômes : douleur thoracique, dyspnée, douleur respiro-dépendante\nIndications positives : suspicion pneumothorax, suspicion épanchement pleural, cardiomégalie suspectée\nIndications négatives : \nRésumé : Recherche une cause respiratoire (pneumothorax, épanchement) ou cardiaque (cardiomégalie).\nUrgence : immédiate\nIonisant : oui\nProduit de contraste : non\nPriorité : priorité 1\nDose : I\nSynonymes : CXR pédiatrique\nSource : ADERIM (2025)\n-- Fin fiche thorax_douleur_enfant_rx_v1 --"
+  },
+  {
+    "id": "thorax_douleur_adulte_ct_ou_angioct_v1",
+    "text": "ID : thorax_douleur_adulte_ct_ou_angioct_v1\nSystème : thorax\nPathologie : douleur thoracique (adulte)\nModalité recommandée : scanner thoracique ou angioscanner (1ère intention)\nPopulation : adulte\nSymptômes : douleur thoracique aiguë, instabilité hémodynamique, douleur transfixiante\nIndications positives : suspicion cause vasculaire, forte probabilité EP ou dissection\nIndications négatives : \nRésumé : Selon le contexte, un angioscanner peut être proposé d’emblée sans radiographie.\nUrgence : immédiate\nIonisant : oui\nProduit de contraste : oui\nPriorité : priorité 1\nDose : (Scanner) II / (Angioscanner) III\nSynonymes : CT thorax, angioscanner thoracique\nSource : ADERIM (2025)\n-- Fin fiche thorax_douleur_adulte_ct_ou_angioct_v1 --"
+  },
+  {
+    "id": "thorax_douleur_adulte_rx_face_v1",
+    "text": "ID : thorax_douleur_adulte_rx_face_v1\nSystème : thorax\nPathologie : douleur thoracique (adulte)\nModalité recommandée : radiographie thoracique de face (1ère intention)\nPopulation : adulte\nSymptômes : douleur thoracique, suspi dissection aortique, instabilité hémodynamique\nIndications positives : bilan initial si patient stable\nIndications négatives : retard du scanner chez patient instable ou suspi dissection\nRésumé : Peut être réalisée mais ne doit pas retarder un scanner/angioscanner si suspicion de dissection aortique ou instabilité hémodynamique.\nUrgence : immédiate\nIonisant : oui\nProduit de contraste : non\nPriorité : priorité 1\nDose : I\nSynonymes : CXR face\nSource : ADERIM (2025)\n-- Fin fiche thorax_douleur_adulte_rx_face_v1 --"
+  }
+]

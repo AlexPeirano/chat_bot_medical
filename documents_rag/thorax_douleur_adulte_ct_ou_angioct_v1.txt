@@ -1,0 +1,17 @@
+ID : thorax_douleur_adulte_ct_ou_angioct_v1
+Système : thorax
+Pathologie : douleur thoracique (adulte)
+Modalité recommandée : scanner thoracique ou angioscanner (1ère intention)
+Population : adulte
+Symptômes : douleur thoracique aiguë, instabilité hémodynamique, douleur transfixiante
+Indications positives : suspicion cause vasculaire, forte probabilité EP ou dissection
+Indications négatives : 
+Résumé : Selon le contexte, un angioscanner peut être proposé d’emblée sans radiographie.
+Urgence : immédiate
+Ionisant : oui
+Produit de contraste : oui
+Priorité : priorité 1
+Dose : (Scanner) II / (Angioscanner) III
+Synonymes : CT thorax, angioscanner thoracique
+Source : ADERIM (2025)
+-- Fin fiche thorax_douleur_adulte_ct_ou_angioct_v1 --

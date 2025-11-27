@@ -1,0 +1,17 @@
+ID : thorax_douleur_enfant_rx_v1
+Système : thorax
+Pathologie : douleur thoracique (enfant)
+Modalité recommandée : radiographie thoracique (1ère intention)
+Population : enfant
+Symptômes : douleur thoracique, dyspnée, douleur respiro-dépendante
+Indications positives : suspicion pneumothorax, suspicion épanchement pleural, cardiomégalie suspectée
+Indications négatives : 
+Résumé : Recherche une cause respiratoire (pneumothorax, épanchement) ou cardiaque (cardiomégalie).
+Urgence : immédiate
+Ionisant : oui
+Produit de contraste : non
+Priorité : priorité 1
+Dose : I
+Synonymes : CXR pédiatrique
+Source : ADERIM (2025)
+-- Fin fiche thorax_douleur_enfant_rx_v1 --

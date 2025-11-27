@@ -1,0 +1,160 @@
+[
+    {
+    "id": "thorax_bruits_anormaux_rx_face_v1",
+    "systeme": "thorax",
+    "pathologie": "bruits respiratoires anormaux",
+    "modalite": "radiographie thoracique de face",
+    "population": ["adulte"],
+    "conditions": {
+        "symptomes_inclus": ["bruits respiratoires anormaux", "sibilants", "crépitants"],
+        "symptomes_exclus": [],
+        "necessite_exam_precedent": false,
+        "condition_exam_precedent": null
+    },
+    "questions": [
+        "Le patient est-il adulte ?",
+        "La respiration présente-t-elle des sibilants ou des crépitants ?"
+    ],
+    "dependances": [
+        {
+        "type": "si_non_contributive",
+        "examen_cible": "thorax_bruits_anormaux_ct_sans_injection_v1"
+        }
+    ],
+    "exclusions": [
+        "Radiographie thoracique récente déjà effectuée"
+    ],
+    "resume": "Radio quasi systématique; passer au scanner si la radiographie ne répond pas à la question.",
+    "priorite": "priorité 2",
+    "urgence_enum": "rapide (<6h)",
+    "ionisant": true,
+    "requires_contrast": false,
+    "dose": "I",
+    "synonymes": ["radio thorax face", "CXR face"],
+    "source": "ADERIM",
+    "year": 2025
+    },
+
+        {
+    "id": "thorax_bruits_anormaux_ct_sans_injection_v1",
+    "systeme": "thorax",
+    "pathologie": "bruits respiratoires anormaux",
+    "modalite": "scanner thoracique sans injection",
+    "population": ["adulte"],
+    "conditions": {
+        "symptomes_inclus": ["bruits respiratoires anormaux"],
+        "symptomes_exclus": [],
+        "necessite_exam_precedent": "thorax_bruits_anormaux_rx_face_v1",
+        "condition_exam_precedent": "non_contributive"
+    },
+    "questions": [
+        "Une radiographie thoracique a-t-elle déjà été réalisée ?",
+        "Le résultat de la radiographie était-il normal ou non contributif ?"
+    ],
+    "dependances": [],
+    "exclusions": [],
+    "resume": "Indiqué si la radiographie ne répond pas à la question.",
+    "priorite": "priorité 2",
+    "urgence_enum": "rapide (<6h)",
+    "ionisant": true,
+    "requires_contrast": false,
+    "dose": "II",
+    "synonymes": ["CT thorax sans injection"],
+    "source": "ADERIM",
+    "year": 2025
+    },
+  
+        {
+    "id": "thorax_douleur_enfant_rx_v1",
+    "systeme": "thorax",
+    "pathologie": "douleur thoracique (enfant)",
+    "modalite": "radiographie thoracique",
+    "population": ["enfant"],
+    "conditions": {
+        "symptomes_inclus": ["douleur thoracique", "dyspnée", "douleur respiro-dépendante"],
+        "symptomes_exclus": [],
+        "necessite_exam_precedent": false,
+        "condition_exam_precedent": null
+    },
+    "questions": [
+        "Le patient est-il un enfant ?",
+        "Présente-t-il dyspnée ou douleur respiro-dépendante ?"
+    ],
+    "dependances": [],
+    "exclusions": [],
+    "resume": "Recherche cause respiratoire ou cardiaque.",
+    "priorite": "priorité 1",
+    "urgence_enum": "immédiate",
+    "ionisant": true,
+    "requires_contrast": false,
+    "dose": "I",
+    "synonymes": ["CXR pédiatrique"],
+    "source": "ADERIM",
+    "year": 2025
+    },
+    {
+    "id": "thorax_douleur_adulte_ct_ou_angioct_v1",
+    "systeme": "thorax",
+    "pathologie": "douleur thoracique (adulte)",
+    "modalite": "scanner ou angioscanner thoracique",
+    "population": ["adulte"],
+    "conditions": {
+        "symptomes_inclus": ["douleur thoracique aiguë", "instabilité hémodynamique", "douleur transfixiante"],
+        "symptomes_exclus": [],
+        "necessite_exam_precedent": false,
+        "condition_exam_precedent": null
+    },
+    "questions": [
+        "Le patient est-il adulte ?",
+        "Présente-t-il une douleur thoracique aiguë ou transfixiante ?",
+        "Y a-t-il instabilité hémodynamique ?"
+    ],
+    "dependances": [],
+    "exclusions": [
+        "Ne pas retarder en cas de forte suspicion de dissection"
+    ],
+    "resume": "Angioscanner souvent proposé d’emblée.",
+    "priorite": "priorité 1",
+    "urgence_enum": "immédiate",
+    "ionisant": true,
+    "requires_contrast": true,
+    "dose": "II/III",
+    "synonymes": ["CT thorax", "angioscanner thoracique"],
+    "source": "ADERIM",
+    "year": 2025
+    },
+
+        {
+    "id": "thorax_douleur_adulte_rx_face_v1",
+    "systeme": "thorax",
+    "pathologie": "douleur thoracique (adulte)",
+    "modalite": "radiographie thoracique de face",
+    "population": ["adulte"],
+    "conditions": {
+        "symptomes_inclus": ["douleur thoracique"],
+        "symptomes_exclus": ["instabilité hémodynamique", "suspi dissection aortique"],
+        "necessite_exam_precedent": false,
+        "condition_exam_precedent": null
+    },
+    "questions": [
+        "Le patient est-il adulte ?",
+        "Le patient est-il stable hémodynamiquement ?",
+        "Existe-t-il une suspicion de dissection aortique ?"
+    ],
+    "dependances": [],
+    "exclusions": [
+        "Ne pas utiliser si cela retarde un scanner/angioscanner en cas d’urgence"
+    ],
+    "resume": "Peut être réalisée si le patient est stable.",
+    "priorite": "priorité 1",
+    "urgence_enum": "immédiate",
+    "ionisant": true,
+    "requires_contrast": false,
+    "dose": "I",
+    "synonymes": ["CXR face"],
+    "source": "ADERIM",
+    "year": 2025
+    }
+
+
+]

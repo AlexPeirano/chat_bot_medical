@@ -1,0 +1,17 @@
+ID : thorax_douleur_adulte_rx_face_v1
+Système : thorax
+Pathologie : douleur thoracique (adulte)
+Modalité recommandée : radiographie thoracique de face (1ère intention)
+Population : adulte
+Symptômes : douleur thoracique, suspi dissection aortique, instabilité hémodynamique
+Indications positives : bilan initial si patient stable
+Indications négatives : retard du scanner chez patient instable ou suspi dissection
+Résumé : Peut être réalisée mais ne doit pas retarder un scanner/angioscanner si suspicion de dissection aortique ou instabilité hémodynamique.
+Urgence : immédiate
+Ionisant : oui
+Produit de contraste : non
+Priorité : priorité 1
+Dose : I
+Synonymes : CXR face
+Source : ADERIM (2025)
+-- Fin fiche thorax_douleur_adulte_rx_face_v1 --

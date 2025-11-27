@@ -1,0 +1,17 @@
+ID : thorax_bruits_anormaux_rx_face_v1
+Système : thorax
+Pathologie : bruits respiratoires anormaux
+Modalité recommandée : radiographie thoracique de face (1ère intention)
+Population : adulte
+Symptômes : bruits respiratoires anormaux, sibilants, crépitants
+Indications positives : bilan initial des bruits respiratoires anormaux, suspicion pneumopathie infectieuse
+Indications négatives : 
+Résumé : Radio quasi systématique; passer au scanner si la radiographie ne répond pas à la question. La priorisation dépend du tableau; suspicion de pneumopathie infectieuse = semi-urgence.
+Urgence : rapide (<6h)
+Ionisant : oui
+Produit de contraste : non
+Priorité : priorité 2
+Dose : I
+Synonymes : radio thorax face, CXR face
+Source : ADERIM (2025)
+-- Fin fiche thorax_bruits_anormaux_rx_face_v1 --
