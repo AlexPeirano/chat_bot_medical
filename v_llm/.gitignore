@@ -65,3 +65,7 @@ Thumbs.db
 # Modèles temporaires
 *.gguf.tmp
 *.safetensors.tmp
+v_llm/src/guideline_resolver.py
+v_llm/src/main2.py
+v_llm/src/ollama2.py
+
