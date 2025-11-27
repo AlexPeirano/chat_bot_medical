@@ -45,12 +45,19 @@ python3 tests/test_scenarios_cliniques.py -v
 TEST_SCENARIOS_CODE=$?
 echo ""
 
+# Lancer tests qualité prescription
+echo "5️⃣  Exécution tests qualité prescription..."
+python3 tests/test_prescription_quality.py
+TEST_QUALITY_CODE=$?
+echo ""
+
 # Résumé
 echo "=========================================="
-if [ $TEST_UNIT_CODE -eq 0 ] && [ $TEST_SCENARIOS_CODE -eq 0 ]; then
-    echo "✅ TOUS LES TESTS PASSENT (76 tests)"
+if [ $TEST_UNIT_CODE -eq 0 ] && [ $TEST_SCENARIOS_CODE -eq 0 ] && [ $TEST_QUALITY_CODE -eq 0 ]; then
+    echo "✅ TOUS LES TESTS PASSENT (98 tests)"
     echo "   • 43 tests unitaires"
     echo "   • 33 tests scénarios cliniques"
+    echo "   • 22 tests qualité prescription"
     echo "=========================================="
     exit 0
 else

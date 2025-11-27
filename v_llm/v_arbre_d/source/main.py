@@ -786,22 +786,51 @@ def _is_question_redundant(question_key, question_label, patient_info, answers):
     # Filtrer questions sur l'âge si l'âge est déjà détecté
     if patient_info.get("age") is not None:
         age = patient_info["age"]
+        
         # Questions de type "âge ≥ X ans" ou "âge < X ans"
-        if re.search(r'âge.*?\d+.*?ans', label_lower):
+        if re.search(r'âge.*?\d+.*?(ans|mois)', label_lower):
             # Extraire le seuil d'âge de la question
-            age_match = re.search(r'(\d+).*?ans', label_lower)
+            age_match = re.search(r'(\d+)\s*(ans|mois)', label_lower)
             if age_match:
                 threshold = int(age_match.group(1))
-                # Déterminer automatiquement la réponse
-                if '≥' in label_lower or '>=' in label_lower or 'sup' in label_lower:
-                    auto_answer = age >= threshold
-                elif '<' in label_lower or 'inf' in label_lower:
-                    auto_answer = age < threshold
-                else:
-                    return False
+                unit = age_match.group(2)
+                
+                # Convertir en mois si nécessaire pour comparaison
+                if unit == 'mois':
+                    # Patient adulte (45 ans = 540 mois) vs "< 4 mois"
+                    age_in_months = age * 12
+                    # Déterminer automatiquement la réponse
+                    if '<' in label_lower or 'inf' in label_lower:
+                        auto_answer = age_in_months < threshold
+                    elif '≥' in label_lower or '>=' in label_lower or 'sup' in label_lower:
+                        auto_answer = age_in_months >= threshold
+                    else:
+                        return False
+                else:  # ans
+                    # Déterminer automatiquement la réponse
+                    if '≥' in label_lower or '>=' in label_lower or 'sup' in label_lower:
+                        auto_answer = age >= threshold
+                    elif '<' in label_lower or 'inf' in label_lower:
+                        auto_answer = age < threshold
+                    else:
+                        return False
+                
                 # Ajouter la réponse automatique et filtrer la question
                 answers[question_key] = auto_answer
                 return True
+        
+        # Filtrer questions spécifiques pour nourrisson/bébé si adulte
+        if age >= 2:  # 2 ans et plus
+            nourrisson_patterns = [
+                r'\bnourrisson\b',
+                r'\bbébé\b',
+                r'\bnew-?born\b',
+                r'\bnouveau[- ]?né\b',
+            ]
+            for pattern in nourrisson_patterns:
+                if re.search(pattern, label_lower):
+                    answers[question_key] = False
+                    return True
     
     # Filtrer questions techniques/procédurales (non cliniques)
     technical_patterns = [
