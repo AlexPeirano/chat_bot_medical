@@ -1,0 +1,1413 @@
+{
+  "total": 54,
+  "passed": 34,
+  "failed": 20,
+  "details": [
+    {
+      "category": "Abréviations - ATCD",
+      "text": "F 55a, céph, ATCD migraines",
+      "passed": false,
+      "errors": [
+        "profile: attendu=chronic, obtenu=unknown"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Abréviations - SAU",
+      "text": "Pt 40 ans, céph brutale, adressé SAU",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "thunderclap",
+        "profile": "acute",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "Abréviations - AEG",
+      "text": "H 65a, céph + AEG, amaigrissement",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Complexe - HSA suspectée",
+      "text": "F 48a, céph coup de tonnerre, EVA 10/10, sdm méningé -, déficit -",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "thunderclap",
+        "profile": "acute",
+        "intensity": 10,
+        "fever": null,
+        "meningeal_signs": true,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "immediate",
+        "imaging": [
+          "scanner_cerebral_sans_injection",
+          "ponction_lombaire"
+        ]
+      }
+    },
+    {
+      "category": "Complexe - Méningite",
+      "text": "H 25a, céph fébrile, T° 39.5, RDN ++, Kernig +, Glasgow 15",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": true,
+        "meningeal_signs": true,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "immediate",
+        "imaging": [
+          "ponction_lombaire"
+        ]
+      }
+    },
+    {
+      "category": "Complexe - AVC ischémique",
+      "text": "Pt 62a, céph brutale + hémiparésie D + aphasie, TA 180/100",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "thunderclap",
+        "profile": "acute",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "Complexe - Trauma + déficit",
+      "text": "F 70a, TCC J-1 sur chute, céph croissante + confusion",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": true,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Complexe - Grossesse + signes sévères",
+      "text": "Patiente 28a G2P1, 32 SA, céph intense + troubles visuels + OMI",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": 9,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": true,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "Complexe - Immunosup + fièvre",
+      "text": "H 52a VIH+, chimio, T° 38.8, céph + photophobie",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": true,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": true
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Convulsions - Crise comitiale",
+      "text": "Pt 38 ans, céph + crise comitiale généralisée",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": true,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Convulsions - Épilepsie",
+      "text": "H 42a, céphalée, crise d'épilepsie",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": true,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Convulsions - CGT",
+      "text": "F 28 ans, céph, CGT ce matin",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "acute",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": true,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "Grossesse - G1P0",
+      "text": "F 28 ans G1P0, 8 SA, céphalée intense",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": 9,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": true,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "Grossesse - Terme",
+      "text": "Patiente 32a, 35 SA, céph + HTA",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": true,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "Grossesse - Gravidique",
+      "text": "Femme 26a, céphalée gravidique, T3",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": true,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "HSA - Acronymes",
+      "text": "F 52a, HSA suspectée, début brutal",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "thunderclap",
+        "profile": "acute",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "HSA - Coup de tonnerre",
+      "text": "Pt 45 ans, céph coup de tonnerre, 10/10",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "thunderclap",
+        "profile": "acute",
+        "intensity": 10,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "immediate",
+        "imaging": [
+          "scanner_cerebral_sans_injection",
+          "ponction_lombaire"
+        ]
+      }
+    },
+    {
+      "category": "HSA - Ictus",
+      "text": "Homme 50a, ictus céphalalgique brutal",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "thunderclap",
+        "profile": "acute",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "HSA - Installation brutale",
+      "text": "Patiente 48 ans, céphalée d'installation brutale",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "thunderclap",
+        "profile": "acute",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "HSA - Début soudain",
+      "text": "H 55a, céph début soudain maximale d'emblée",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "thunderclap",
+        "profile": "acute",
+        "intensity": 9,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "immediate",
+        "imaging": [
+          "scanner_cerebral_sans_injection",
+          "ponction_lombaire"
+        ]
+      }
+    },
+    {
+      "category": "HSA - Pire céphalée",
+      "text": "F 42 ans, pire céphalée de sa vie",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "thunderclap",
+        "profile": "acute",
+        "intensity": 10,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "immediate",
+        "imaging": [
+          "scanner_cerebral_sans_injection",
+          "ponction_lombaire"
+        ]
+      }
+    },
+    {
+      "category": "HTIC - Acronyme",
+      "text": "Patiente 55 ans, signes d'HTIC, vomissements",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": true,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "HTIC - Syndrome",
+      "text": "H 48a, sdm HTIC, céph matinales",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": true,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "HTIC - Vomissements en jet",
+      "text": "F 32 ans, céphalée, vomissements en jet",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": true,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Immunosup - VIH+",
+      "text": "Pt VIH+, CD4 150, céphalée fébrile",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": true,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": true
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Immunosup - Chimio",
+      "text": "H 58a, chimio en cours (K poumon), céph",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": true
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Immunosup - Cortico",
+      "text": "F 62 ans, cortico au long cours (PR), céph",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": true
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Immunosup - Greffe",
+      "text": "Pt 45a, greffé rénal, ttt immunosup, céph",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": true
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Intensité - EVA",
+      "text": "Patiente 42 ans, céphalée EVA 9/10",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": 9,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Intensité - EN",
+      "text": "H 48a, douleur EN 8/10",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": 8,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Intensité - Maximale",
+      "text": "F 50 ans, céph intensité maximale d'emblée",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "thunderclap",
+        "profile": "acute",
+        "intensity": 10,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "immediate",
+        "imaging": [
+          "scanner_cerebral_sans_injection",
+          "ponction_lombaire"
+        ]
+      }
+    },
+    {
+      "category": "Intensité - Modérée",
+      "text": "Pt 35a, douleur modérée 5/10",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": 5,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Méningite - Sdm méningé",
+      "text": "Pt 28a, T° 39°C, sdm méningé +",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": true,
+        "meningeal_signs": true,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "immediate",
+        "imaging": [
+          "ponction_lombaire"
+        ]
+      }
+    },
+    {
+      "category": "Méningite - Kernig",
+      "text": "Homme 25 ans, fébrile, Kernig positif",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": true,
+        "meningeal_signs": true,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "immediate",
+        "imaging": [
+          "ponction_lombaire"
+        ]
+      }
+    },
+    {
+      "category": "Méningite - Brudzinski",
+      "text": "F 30a, fièvre 38.5, Brudzinski +",
+      "passed": false,
+      "errors": [
+        "meningeal_signs: attendu=True, obtenu=None",
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": true,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Méningite - RDN",
+      "text": "Pt 35 ans, T° 39.2, RDN importante",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": true,
+        "meningeal_signs": true,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "immediate",
+        "imaging": [
+          "ponction_lombaire"
+        ]
+      }
+    },
+    {
+      "category": "Méningite - Hyperthermie",
+      "text": "H 22a, hyperthermie 39.5, raideur nuque",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": true,
+        "meningeal_signs": true,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "immediate",
+        "imaging": [
+          "ponction_lombaire"
+        ]
+      }
+    },
+    {
+      "category": "Neuro - Hémiparésie",
+      "text": "Patiente 60 ans, céph + hémiparésie D",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Neuro - Déficit sensitivomoteur",
+      "text": "H 58a, céph, DSM membre sup G",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Neuro - Aphasie",
+      "text": "F 65 ans, céphalée, trouble du langage type aphasie",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Neuro - Paralysie faciale",
+      "text": "Pt 52a, céph + PF centrale droite",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Neuro - Diplopie",
+      "text": "Homme 45 ans, céphalée, diplopie binoculaire",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Neuro - Trouble vigilance",
+      "text": "F 70a, céph, altération conscience, Glasgow 13",
+      "passed": false,
+      "errors": [
+        "urgency: attendu=immediate, obtenu=urgent"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": true,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Post-partum - J+5",
+      "text": "F 29 ans, J5 post-partum, céph violente",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": true,
+        "pregnancy_postpartum": true,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "Temporal - Aigu J0",
+      "text": "Patiente 40 ans, céph depuis ce matin",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "acute",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "Temporal - Aigu 48h",
+      "text": "H 35a, céph évoluant depuis 48h",
+      "passed": false,
+      "errors": [
+        "profile: attendu=acute, obtenu=unknown"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Temporal - Subaigu 2S",
+      "text": "F 50 ans, céphalée depuis 2 semaines",
+      "passed": false,
+      "errors": [
+        "profile: attendu=subacute, obtenu=unknown"
+      ],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Temporal - Subaigu 1M",
+      "text": "Pt 45a, céph évoluant depuis 1 mois",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "subacute",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "delayed",
+        "imaging": [
+          "irm_cerebrale"
+        ]
+      }
+    },
+    {
+      "category": "Temporal - Chronique",
+      "text": "H 55 ans, céphalées chroniques depuis 6 mois",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "chronic",
+        "profile": "chronic",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "none",
+        "imaging": []
+      }
+    },
+    {
+      "category": "Temporal - Récurrente",
+      "text": "F 38a, céph récurrentes depuis des années",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "chronic",
+        "profile": "chronic",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": null,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "none",
+        "imaging": []
+      }
+    },
+    {
+      "category": "Trauma - TCE",
+      "text": "Pt 35a, TCE J-2, céph persistante",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": true,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    },
+    {
+      "category": "Trauma - TCC",
+      "text": "H 28 ans, TCC hier, céphalée croissante",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "acute",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": true,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "Trauma - AVP",
+      "text": "F 40a, AVP ce matin, céph intense",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "acute",
+        "intensity": 9,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": true,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "irm_cerebrale",
+          "angio_irm_veineuse"
+        ]
+      }
+    },
+    {
+      "category": "Trauma - Contusion crânienne",
+      "text": "Pt 45 ans, contusion crânienne J-1",
+      "passed": true,
+      "errors": [],
+      "case": {
+        "onset": "unknown",
+        "profile": "unknown",
+        "intensity": null,
+        "fever": null,
+        "meningeal_signs": null,
+        "neuro_deficit": null,
+        "seizure": null,
+        "htic_pattern": null,
+        "trauma": true,
+        "pregnancy_postpartum": null,
+        "immunosuppression": null
+      },
+      "recommendation": {
+        "urgency": "urgent",
+        "imaging": [
+          "scanner_cerebral_sans_injection"
+        ]
+      }
+    }
+  ]
+}

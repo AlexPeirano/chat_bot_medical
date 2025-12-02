@@ -28,6 +28,12 @@ ONSET_PATTERNS = {
         r"en quelques secondes",
         r"d'emblée maximale?",
         r"violence maximale d'emblée",
+        r"maximale? d'emblée",
+        r"installation brutale",
+        r"d'installation brutale",
+        r"début (?:brutal|soudain)",
+        r"ictus céphalalgique",
+        r"HSA",
         # Langage familier
         r"d'un coup",
         r"d'un seul coup",
@@ -139,7 +145,10 @@ FEVER_PATTERNS = {
         r"fièvre",
         r"fébrile",
         r"température",
-        r"(?:38|39|40)°?C",
+        r"t°\s*\d+",  # t° 39
+        r"t=\s*\d+",  # t=39
+        r"(?:38|39|40)°?c",
+        r"\d+\.\d+\s*°c",  # 38.5°c
         r"hyperthermie",
         r"avec de la fièvre"
     ],
@@ -155,11 +164,14 @@ FEVER_PATTERNS = {
 MENINGEAL_SIGNS_PATTERNS = {
     True: [
         r"syndrome méningé",
+        r"sdm méningé",  # Syndrome méningé (abréviation)
         r"raideur(?: de(?: la)?)? nuque",
+        r"rdn",  # Raideur De Nuque
         r"raideur méningée",
         r"signe de kernig",
         r"signe de brudzinski",
         r"kernig positif",
+        r"kernig \+",  # Kernig +
         r"brudzinski positif",
         r"chien de fusil",
         r"nuque raide",
@@ -182,6 +194,8 @@ HTIC_PATTERNS = {
     True: [
         r"hypertension intracrânienne",
         r"htic",
+        r"sdm htic",  # Syndrome HTIC
+        r"signes? (?:d')?htic",
         r"céphalée matutinale",
         r"vomissement(?:s)? en jet",
         r"aggrav(?:ée?|ation) (?:par la )?toux",
@@ -206,11 +220,16 @@ SEIZURE_PATTERNS = {
         r"nie (?:toute )?(?:crise|convulsion)"
     ],
     True: [
-        r"convulsions?",
+        # Patterns spécifiques en premier (avant les génériques)
+        r"cgt",  # Crise Généralisée Tonico-Clonique
+        r"crise comitiale",  # Terme médical pour crise d'épilepsie
+        r"crise d'épilepsie",
+        r"crise (?:généralisée )?(?:tonico-clonique|tonique|clonique)",
+        r"crises? épileptiques?",
         r"crise convulsive",
         r"crises? convulsives?",
-        r"crise d'épilepsie",
-        r"crises? épileptiques?",
+        # Patterns génériques
+        r"convulsions?",
         r"épilepsie",
         r"a convulsé",
         r"fait une crise",
@@ -233,12 +252,20 @@ NEURO_DEFICIT_PATTERNS = {
     ],
     True: [
         r"déficit",
+        r"dsm",  # Déficit Sensitivomoteur
         r"hémiparésie",
         r"hémiplégie",
         r"aphasie",
         r"trouble du langage",
         r"hémianopsie",
         r"parésie",
+        r"pf",  # Paralysie Faciale
+        r"paralysie faciale",
+        r"diplopie",  # Vision double
+        r"confusion",
+        r"altération (?:de (?:la|l'))?conscience",
+        r"glasgow",  # Score de Glasgow
+        r"gcs",  # Glasgow Coma Scale
         r"faiblesse (?:d')?un (?:bras|membre)",
         r"ne peut plus bouger",
         # Symptômes spécifiques
@@ -258,16 +285,6 @@ NEURO_DEFICIT_PATTERNS = {
 }
 
 # Patterns pour crises d'épilepsie
-SEIZURE_PATTERNS = {
-    True: [
-        r"crise(?:s)? (?:d')?épilep(?:sie|tique)",
-        r"convulsion",
-        r"crise convulsive",
-        r"perte de connaissance avec secousses",
-        r"mouvement(?:s)? anormaux"
-    ]
-}
-
 # Patterns pour contextes à risque
 PREGNANCY_POSTPARTUM_PATTERNS = {
     True: [
@@ -280,10 +297,16 @@ PREGNANCY_POSTPARTUM_PATTERNS = {
         r"femme gestante",
         r"patiente gestante",
         r"patiente en gestation",
+        r"g\d+p\d+",  # g1p0, g2p1, etc. (Grossesse/Parité)
+        r"\d+\s*sa",  # 8 sa, 12sa (Semaines d'Aménorrhée)
+        r"gravidique",  # Ex: céphalée gravidique
+        r"t[123]",  # t1, t2, t3 (trimestres)
+        r"(?:1er|2ème|3ème) trimestre",
         r"post[- ]partum",
         r"accouchement",
         r"a accouché",
         r"vient d'accoucher",
+        r"J[0-9]+\s*(?:post[- ]partum)?",  # J5 post-partum
         # Formulations variées
         r"accouch(?:é|ée|ement) (?:il y a|depuis)",
         r"(?:jeune )?mère",
@@ -308,9 +331,13 @@ TRAUMA_PATTERNS = {
         r"coup (?:à|sur) la tête",
         r"chute",
         r"accident",
+        r"avp",  # Accident Voie Publique
+        r"accident (?:de (?:la )?)?voie publique",
+        r"contusion (?:crânienne|cérébrale)",
+        r"j-?\d+",  # j-1, j-2, j3, etc.
         # Acronymes médicaux (en minuscules car text_lower)
         r"tce",
-        r"tcc",
+        r"tcc",  # Traumatisme Cranio-Cérébral
         r"traumatisme (?:crânien|cranio|cérébral)"
     ]
 }
@@ -325,9 +352,15 @@ IMMUNOSUPPRESSION_PATTERNS = {
         r"corticothérapie",
         r"immunosuppresseur",
         r"greffe",
+        r"greffé(?:e)?",  # Patient greffé
+        r"cd4",  # Taux de CD4 (VIH)
+        r"k\s+(?:poumon|sein|colon|prostate|ovaire)",  # k = cancer
+        r"cancer",
+        r"ttt immunosup",  # Traitement immunosuppresseur
+        r"cortico",  # Corticothérapie (abrégé)
         # Variantes (en minuscules car text_lower)
         r"vih\+",
-        r"vih positif",
+        r"vih positif"
         r"séropositif",
         r"sous chimiothérapie",
         r"sous corticothérapie",
