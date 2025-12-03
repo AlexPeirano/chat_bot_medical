@@ -1,0 +1,531 @@
+
+================================================================================
+TESTS CAS PATIENTS RÉELS - FORMULATIONS MÉDICALES FRANÇAISES
+================================================================================
+
+================================================================================
+TEST: P001_HSA_suspicion
+Description: HSA suspectée - Coup de tonnerre
+================================================================================
+
+Médecin: H 52a, céph brutale type coup de tonnerre dep 2h, EVA 10/10, vom +, photophobie
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: immediate ✅
+  Examens obtenus: ['scanner_cerebral_sans_injection', 'ponction_lombaire']
+  Examens attendus: ['scanner_cerebral_sans_injection']
+  Examens OK: ❌
+  Commentaire: HSA suspectée : scanner cérébral en urgence (<12h pour sensibilité 98%). Si scanner normal, ponction lombaire obligatoire à la recherche de xanthochro...
+================================================================================
+
+================================================================================
+TEST: P002_meningite
+Description: Méningite bactérienne
+================================================================================
+
+Médecin: F 28a, céph intense + T 39.5 + RDN ++, Kernig +, Brudzinski pos, confusion
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: immediate ✅
+  Examens obtenus: ['ponction_lombaire']
+  Examens attendus: ['ponction_lombaire']
+  Examens OK: ✅
+  Commentaire: Méningite bactérienne suspectée. Ponction lombaire en urgence après élimination de contre-indications (scanner si signes de focalisation, trouble de c...
+================================================================================
+
+================================================================================
+TEST: P003_htic_aigue
+Description: HTIC aiguë sur processus expansif
+================================================================================
+
+Médecin: Pt 65a, céph progressive dep 3 sem, pire le matin, vom en jet, OP ++, hémipar D
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: immediate ✅
+  Examens obtenus: ['scanner_cerebral_sans_injection', 'irm_cerebrale']
+  Examens attendus: ['scanner_cerebral_sans_injection', 'irm_cerebrale']
+  Examens OK: ✅
+  Commentaire: HTIC suspectée (céphalée matutinale, vomissements en jet, troubles visuels). Scanner/IRM en urgence pour rechercher processus expansif, hydrocéphalie,...
+================================================================================
+
+================================================================================
+TEST: P004_tvc_postpartum
+Description: TVC post-partum
+================================================================================
+
+Médecin: F 32a, J8 post-partum, céph intense progressive dep 2j, déficit MSD, CGT ce matin
+Assistant: Le patient a-t-il de la fièvre ? (température > 38°C)
+
+Auto-réponse: non
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: immediate ✅
+  Examens obtenus: ['irm_cerebrale', 'angio_irm_veineuse']
+  Examens attendus: ['irm_cerebrale']
+  Examens OK: ❌
+  Commentaire: TVC suspectée avec déficit neurologique (contexte grossesse/post-partum). Urgence vitale. IRM + angio-IRM veineuse immédiates. Traitement anticoagulan...
+================================================================================
+
+================================================================================
+TEST: P005_tcc_recent
+Description: TCC avec hématome sous-dural
+================================================================================
+
+Médecin: H 78a, AVP J-3, TCC avec PDC, céph croissante, confusion, GCS 14
+Assistant: Comment la douleur a-t-elle débuté chez le patient ? (brutalement comme un coup de tonnerre, progressivement sur plusieurs heures/jours, ou s'agit-il d'une douleur chronique présente depuis longtemps ?)
+
+Auto-réponse: non, progressivement
+Assistant: Le patient a-t-il de la fièvre ? (température > 38°C)
+
+Auto-réponse: non
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: Sur une échelle de 0 à 10, quelle est l'intensité de la douleur du patient ? (0 = aucune douleur, 10 = douleur maximale insupportable)
+
+Auto-réponse: 5
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: urgent ❌ (attendu: immediate)
+  Examens obtenus: ['scanner_cerebral_sans_injection']
+  Examens attendus: ['scanner_cerebral_sans_injection']
+  Examens OK: ✅
+  Commentaire: Céphalée aiguë inhabituelle sans correspondance règle spécifique. Scanner cérébral recommandé pour éliminer cause secondaire grave (HSA, méningite, pr...
+================================================================================
+
+================================================================================
+TEST: P006_abces_cerebral
+Description: Abcès cérébral sur immunodépression
+================================================================================
+
+Médecin: H 45a, VIH+ CD4 80, céph + T 38.8, confusion, déficit MSG, sd méningé
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: immediate ✅
+  Examens obtenus: ['ponction_lombaire']
+  Examens attendus: ['scanner_cerebral_avec_injection', 'irm_cerebrale']
+  Examens OK: ❌
+  Commentaire: Méningite bactérienne suspectée. Ponction lombaire en urgence après élimination de contre-indications (scanner si signes de focalisation, trouble de c...
+================================================================================
+
+================================================================================
+TEST: P007_migraine_aura
+Description: Migraine avec aura typique
+================================================================================
+
+Médecin: F 35a, céph unilatérale G pulsatile dep ce matin, scotomes 20min avant, nausées, photophobie, EVA 7, ATCD migraine
+Assistant: Comment la douleur a-t-elle débuté chez le patient ? (brutalement comme un coup de tonnerre, progressivement sur plusieurs heures/jours, ou s'agit-il d'une douleur chronique présente depuis longtemps ?)
+
+Auto-réponse: non, progressivement
+Assistant: Le patient a-t-il de la fièvre ? (température > 38°C)
+
+Auto-réponse: non
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: urgent ❌ (attendu: none)
+  Examens obtenus: ['scanner_cerebral_sans_injection']
+  Examens attendus: []
+  Examens OK: ❌
+  Commentaire: Céphalée aiguë inhabituelle sans correspondance règle spécifique. Scanner cérébral recommandé pour éliminer cause secondaire grave (HSA, méningite, pr...
+================================================================================
+
+================================================================================
+TEST: P008_tension_stress
+Description: Céphalée de tension
+================================================================================
+
+Médecin: Pt 42a, céph en étau frontale bilat dep 3j, intensité modérée 4/10, pas de vom, pas de photophobie
+Assistant: Comment la douleur a-t-elle débuté chez le patient ? (brutalement comme un coup de tonnerre, progressivement sur plusieurs heures/jours, ou s'agit-il d'une douleur chronique présente depuis longtemps ?)
+
+Auto-réponse: non, progressivement
+Assistant: Le patient a-t-il de la fièvre ? (température > 38°C)
+
+Auto-réponse: non
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: urgent ❌ (attendu: none)
+  Examens obtenus: ['scanner_cerebral_sans_injection']
+  Examens attendus: []
+  Examens OK: ❌
+  Commentaire: Céphalée aiguë inhabituelle sans correspondance règle spécifique. Scanner cérébral recommandé pour éliminer cause secondaire grave (HSA, méningite, pr...
+================================================================================
+
+================================================================================
+TEST: P009_chronique_sans_alarme
+Description: Céphalée chronique quotidienne sans signe d'alarme
+================================================================================
+
+Médecin: F 50a, céph chronique dep 2 ans, tous les jours, intensité variable 3-6/10, apyr, RDN -, sans déficit, examen neuro normal
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: none ✅
+  Examens obtenus: []
+  Examens attendus: []
+  Examens OK: ✅
+  Commentaire: Céphalée chronique sans signe d'alarme. Pas d'imagerie systématique si examen neurologique normal. Traitement symptomatique et consultation neurologiq...
+================================================================================
+
+================================================================================
+TEST: P010_sinusite_aigue
+Description: Céphalée sur sinusite maxillaire
+================================================================================
+
+Médecin: H 38a, céph frontale + douleur sinusienne, rhinorrhée purulente, T 38.2, aggravée tête penchée
+Assistant: Comment la douleur a-t-elle débuté chez le patient ? (brutalement comme un coup de tonnerre, progressivement sur plusieurs heures/jours, ou s'agit-il d'une douleur chronique présente depuis longtemps ?)
+
+Auto-réponse: non, progressivement
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: Sur une échelle de 0 à 10, quelle est l'intensité de la douleur du patient ? (0 = aucune douleur, 10 = douleur maximale insupportable)
+
+Auto-réponse: 5
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: urgent ❌ (attendu: none)
+  Examens obtenus: ['scanner_cerebral_sans_injection']
+  Examens attendus: []
+  Examens OK: ❌
+  Commentaire: Céphalée aiguë inhabituelle sans correspondance règle spécifique. Scanner cérébral recommandé pour éliminer cause secondaire grave (HSA, méningite, pr...
+================================================================================
+
+================================================================================
+TEST: P011_hsa_atypique
+Description: HSA avec présentation atypique
+================================================================================
+
+Médecin: F 60a, céph brutale hier soir, actuellement EVA 6, raideur nuque discrète, sans déficit
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: immediate ✅
+  Examens obtenus: ['scanner_cerebral_sans_injection', 'ponction_lombaire']
+  Examens attendus: ['scanner_cerebral_sans_injection']
+  Examens OK: ❌
+  Commentaire: HSA suspectée : scanner cérébral en urgence (<12h pour sensibilité 98%). Si scanner normal, ponction lombaire obligatoire à la recherche de xanthochro...
+================================================================================
+
+================================================================================
+TEST: P012_tvc_grossesse
+Description: TVC sur grossesse T3
+================================================================================
+
+Médecin: F 29a, G1P0 36SA, céph progressive dep 5j, EVA 8, vom, vision floue, sans sg méningés
+Assistant: Le patient a-t-il de la fièvre ? (température > 38°C)
+
+Auto-réponse: non
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: immediate ✅
+  Examens obtenus: ['irm_cerebrale', 'angio_irm_veineuse']
+  Examens attendus: ['irm_cerebrale']
+  Examens OK: ❌
+  Commentaire: TVC suspectée avec déficit neurologique (contexte grossesse/post-partum). Urgence vitale. IRM + angio-IRM veineuse immédiates. Traitement anticoagulan...
+================================================================================
+
+================================================================================
+TEST: P013_dissection_vertebrale
+Description: Dissection vertébrale post-traumatique
+================================================================================
+
+Médecin: H 45a, choc cervical pendant sport J-2, céph occipitale + cervicalgie, acouphène pulsatile, vertiges
+Assistant: Comment la douleur a-t-elle débuté chez le patient ? (brutalement comme un coup de tonnerre, progressivement sur plusieurs heures/jours, ou s'agit-il d'une douleur chronique présente depuis longtemps ?)
+
+Auto-réponse: non, progressivement
+Assistant: Le patient a-t-il de la fièvre ? (température > 38°C)
+
+Auto-réponse: non
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: Sur une échelle de 0 à 10, quelle est l'intensité de la douleur du patient ? (0 = aucune douleur, 10 = douleur maximale insupportable)
+
+Auto-réponse: 5
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: urgent ✅
+  Examens obtenus: ['scanner_cerebral_sans_injection']
+  Examens attendus: ['angio_irm']
+  Examens OK: ❌
+  Commentaire: Céphalée aiguë inhabituelle sans correspondance règle spécifique. Scanner cérébral recommandé pour éliminer cause secondaire grave (HSA, méningite, pr...
+================================================================================
+
+================================================================================
+TEST: P014_tumor_cerebral
+Description: Tumeur cérébrale évolutive
+================================================================================
+
+Médecin: Pt 58a, K poumon traité chimio, céph progressive dep 6 sem, pire matin, vom, troubles mnésiques
+Assistant: Le patient a-t-il de la fièvre ? (température > 38°C)
+
+Auto-réponse: non
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: Sur une échelle de 0 à 10, quelle est l'intensité de la douleur du patient ? (0 = aucune douleur, 10 = douleur maximale insupportable)
+
+Auto-réponse: 5
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: delayed ❌ (attendu: urgent)
+  Examens obtenus: ['irm_cerebrale']
+  Examens attendus: ['irm_cerebrale']
+  Examens OK: ✅
+  Commentaire: Céphalée subaiguë d'aggravation progressive. IRM cérébrale recommandée pour recherche processus expansif, HTIC, TVC. Consultation neurologique dans le...
+================================================================================
+
+================================================================================
+TEST: P015_algie_vasculaire
+Description: Algie vasculaire de la face
+================================================================================
+
+Médecin: H 40a, douleur périorbitaire G sévère 10/10, larmoiement, rhinorrhée, durée 45min, crises nocturnes répétées
+Assistant: Comment la douleur a-t-elle débuté chez le patient ? (brutalement comme un coup de tonnerre, progressivement sur plusieurs heures/jours, ou s'agit-il d'une douleur chronique présente depuis longtemps ?)
+
+Auto-réponse: non, progressivement
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: urgent ❌ (attendu: delayed)
+  Examens obtenus: ['scanner_cerebral_sans_injection']
+  Examens attendus: []
+  Examens OK: ❌
+  Commentaire: Céphalée aiguë inhabituelle sans correspondance règle spécifique. Scanner cérébral recommandé pour éliminer cause secondaire grave (HSA, méningite, pr...
+================================================================================
+
+================================================================================
+TEST: P016_hypertension_maligne
+Description: Céphalée sur HTA maligne
+================================================================================
+
+Médecin: F 55a, céph intense + TA 220/120, flou visuel, nausées, pas ATCD HTA
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: immediate ✅
+  Examens obtenus: ['scanner_cerebral_sans_injection', 'irm_cerebrale']
+  Examens attendus: ['scanner_cerebral_sans_injection']
+  Examens OK: ❌
+  Commentaire: HTIC + déficit neurologique = urgence vitale. Processus expansif probable (tumeur, hémorragie, AVC, abcès). Scanner immédiat puis IRM. CONTRE-INDICATI...
+================================================================================
+
+================================================================================
+TEST: P017_meningite_virale
+Description: Méningite virale probable
+================================================================================
+
+Médecin: H 25a, céph + T 38.3 + RDN +, photophobie, contexte épidémique entérovirus, pas de confusion
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: immediate ❌ (attendu: urgent)
+  Examens obtenus: ['ponction_lombaire']
+  Examens attendus: ['ponction_lombaire']
+  Examens OK: ✅
+  Commentaire: Méningite bactérienne suspectée. Ponction lombaire en urgence après élimination de contre-indications (scanner si signes de focalisation, trouble de c...
+================================================================================
+
+================================================================================
+TEST: P018_migraine_compliquee
+Description: Migraine compliquée avec aura prolongée
+================================================================================
+
+Médecin: F 32a, céph hémicrânienne D, aura visuelle persistante > 1h, hémipar G transitoire, ATCD migraine
+Assistant: Comment la douleur a-t-elle débuté chez le patient ? (brutalement comme un coup de tonnerre, progressivement sur plusieurs heures/jours, ou s'agit-il d'une douleur chronique présente depuis longtemps ?)
+
+Auto-réponse: non, progressivement
+Assistant: Le patient a-t-il de la fièvre ? (température > 38°C)
+
+Auto-réponse: non
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: Sur une échelle de 0 à 10, quelle est l'intensité de la douleur du patient ? (0 = aucune douleur, 10 = douleur maximale insupportable)
+
+Auto-réponse: 5
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: urgent ✅
+  Examens obtenus: ['scanner_cerebral_sans_injection']
+  Examens attendus: ['irm_cerebrale']
+  Examens OK: ❌
+  Commentaire: Céphalée aiguë inhabituelle sans correspondance règle spécifique. Scanner cérébral recommandé pour éliminer cause secondaire grave (HSA, méningite, pr...
+================================================================================
+
+================================================================================
+TEST: P019_post_pl
+Description: Céphalée post-ponction lombaire
+================================================================================
+
+Médecin: Pt 40a, PL il y a 2j pour bilan sclérose en plaques, céph intense orthostatique, pire debout, amélioration décubitus
+Assistant: Comment la douleur a-t-elle débuté chez le patient ? (brutalement comme un coup de tonnerre, progressivement sur plusieurs heures/jours, ou s'agit-il d'une douleur chronique présente depuis longtemps ?)
+
+Auto-réponse: non, progressivement
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: urgent ❌ (attendu: delayed)
+  Examens obtenus: ['scanner_cerebral_sans_injection']
+  Examens attendus: []
+  Examens OK: ❌
+  Commentaire: Céphalée aiguë inhabituelle sans correspondance règle spécifique. Scanner cérébral recommandé pour éliminer cause secondaire grave (HSA, méningite, pr...
+================================================================================
+
+================================================================================
+TEST: P020_hematome_sous_arachno
+Description: Hématome sous-arachnoïdien chronique
+================================================================================
+
+Médecin: H 82a, sous AVK, chute J-15, céph progressive, confusion fluctuante, marche instable
+Assistant: Le patient a-t-il de la fièvre ? (température > 38°C)
+
+Auto-réponse: non
+Assistant: Le patient présente-t-il une raideur de la nuque ? (difficulté ou douleur à plier la tête vers l'avant)
+
+Auto-réponse: non
+Assistant: Sur une échelle de 0 à 10, quelle est l'intensité de la douleur du patient ? (0 = aucune douleur, 10 = douleur maximale insupportable)
+
+Auto-réponse: 5
+Assistant: La douleur est-elle pire le matin au réveil ? Y a-t-il des vomissements en jet ou une aggravation lors de la toux/effort ?
+
+Auto-réponse: non
+
+================================================================================
+RÉSULTATS:
+  Urgence obtenue: urgent ✅
+  Examens obtenus: ['scanner_cerebral_sans_injection']
+  Examens attendus: ['scanner_cerebral_sans_injection']
+  Examens OK: ✅
+  Commentaire: Céphalée aiguë inhabituelle sans correspondance règle spécifique. Scanner cérébral recommandé pour éliminer cause secondaire grave (HSA, méningite, pr...
+================================================================================
+
+================================================================================
+STATISTIQUES GLOBALES
+================================================================================
+Total de cas testés: 20
+Succès complets: 4/20 (20.0%)
+Urgence correcte: 12/20 (60.0%)
+Examens corrects: 7/20 (35.0%)
+================================================================================
+
+DÉTAIL DES ÉCHECS:
+
+  P001_HSA_suspicion:
+    ❌ Examens: ['scanner_cerebral_sans_injection', 'ponction_lombaire'] au lieu de ['scanner_cerebral_sans_injection']
+
+  P004_tvc_postpartum:
+    ❌ Examens: ['irm_cerebrale', 'angio_irm_veineuse'] au lieu de ['irm_cerebrale']
+
+  P005_tcc_recent:
+    ❌ Urgence: urgent au lieu de immediate
+
+  P006_abces_cerebral:
+    ❌ Examens: ['ponction_lombaire'] au lieu de ['scanner_cerebral_avec_injection', 'irm_cerebrale']
+
+  P007_migraine_aura:
+    ❌ Urgence: urgent au lieu de none
+    ❌ Examens: ['scanner_cerebral_sans_injection'] au lieu de []
+
+  P008_tension_stress:
+    ❌ Urgence: urgent au lieu de none
+    ❌ Examens: ['scanner_cerebral_sans_injection'] au lieu de []
+
+  P010_sinusite_aigue:
+    ❌ Urgence: urgent au lieu de none
+    ❌ Examens: ['scanner_cerebral_sans_injection'] au lieu de []
+
+  P011_hsa_atypique:
+    ❌ Examens: ['scanner_cerebral_sans_injection', 'ponction_lombaire'] au lieu de ['scanner_cerebral_sans_injection']
+
+  P012_tvc_grossesse:
+    ❌ Examens: ['irm_cerebrale', 'angio_irm_veineuse'] au lieu de ['irm_cerebrale']
+
+  P013_dissection_vertebrale:
+    ❌ Examens: ['scanner_cerebral_sans_injection'] au lieu de ['angio_irm']
+
+  P014_tumor_cerebral:
+    ❌ Urgence: delayed au lieu de urgent
+
+  P015_algie_vasculaire:
+    ❌ Urgence: urgent au lieu de delayed
+    ❌ Examens: ['scanner_cerebral_sans_injection'] au lieu de []
+
+  P016_hypertension_maligne:
+    ❌ Examens: ['scanner_cerebral_sans_injection', 'irm_cerebrale'] au lieu de ['scanner_cerebral_sans_injection']
+
+  P017_meningite_virale:
+    ❌ Urgence: immediate au lieu de urgent
+
+  P018_migraine_compliquee:
+    ❌ Examens: ['scanner_cerebral_sans_injection'] au lieu de ['irm_cerebrale']
+
+  P019_post_pl:
+    ❌ Urgence: urgent au lieu de delayed
+    ❌ Examens: ['scanner_cerebral_sans_injection'] au lieu de []
+
+✅ Résultats sauvegardés dans: test_cas_patients_resultats.json

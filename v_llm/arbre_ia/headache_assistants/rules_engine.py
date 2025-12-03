@@ -151,8 +151,18 @@ def match_rule(case: HeadacheCase, rule: Dict[str, Any]) -> bool:
                     matches.append(actual_value in expected_value)
             
             elif isinstance(expected_value, bool):
-                # Comparaison booléenne stricte
-                matches.append(actual_value is expected_value)
+                # Comparaison booléenne avec gestion None
+                # Pour les red flags: None est traité comme False (absence de signe)
+                red_flag_fields = ['fever', 'meningeal_signs', 'neuro_deficit', 'htic_pattern', 
+                                   'visual_disturbance', 'consciousness_disorder', 'seizure',
+                                   'trauma', 'pregnancy_postpartum', 'immunosuppression']
+                
+                if key in red_flag_fields and actual_value is None:
+                    # None = absence de signe = False pour les red flags
+                    matches.append(expected_value is False)
+                else:
+                    # Comparaison booléenne stricte normale
+                    matches.append(actual_value is expected_value)
             
             else:
                 # Comparaison d'égalité standard
@@ -292,9 +302,8 @@ def _apply_contextual_adaptations(
             else:
                 new_imaging.append(exam)
         
-        # Ajouter angio-IRM veineuse si pas déjà présente (risque TVC)
-        if "angio_irm_veineuse" not in new_imaging:
-            new_imaging.append("angio_irm_veineuse")
+        # Ne PAS ajouter angio-IRM veineuse automatiquement
+        # C'est à la règle PREGNANCY_001 de le prescrire si nécessaire
         
         adapted_imaging = new_imaging
         

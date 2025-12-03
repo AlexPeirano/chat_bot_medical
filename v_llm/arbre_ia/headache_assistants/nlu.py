@@ -166,10 +166,10 @@ FEVER_PATTERNS = {
         r"féb",  # Abréviation
         r"température",
         r"temp(?:érature)?",
-        r"t°?\s*\d+",  # T 39, T° 39
-        r"t=\s*\d+",  # T=39
+        r"\bt°?\s*\d+",  # T 39, T° 39 (avec word boundary)
+        r"\bt=\s*\d+",  # T=39
         r"\d+°\d+",  # 38°5
-        r"(?:38|39|40)(?:°|°C)?",  # 38, 38°, 38°C
+        r"(?:38|39|40)(?:°|°C)\b",  # 38°, 38°C (requires degree symbol, avoids age like "40a")
         r"\d+\.\d+\s*°c?",  # 38.5°c, 38.5°C
         r"féb(?:rile)?\s*(?:à|=)\s*\d+",  # féb à 39
         r"hyperthermie",
@@ -229,6 +229,12 @@ MENINGEAL_SIGNS_PATTERNS = {
 
 # Patterns pour le pattern HTIC
 HTIC_PATTERNS = {
+    False: [
+        r"scotomes?",  # Scotomes = aura migraineuse, pas HTIC
+        r"aura",
+        r"(?:pas|sans) (?:de |d')?(?:signes? )?htic",
+        r"htic (?:négatif|absent|écart)"
+    ],
     True: [
         r"hypertension intracrânienne",
         r"htic",
@@ -240,7 +246,7 @@ HTIC_PATTERNS = {
         r"vom(?:issements)? en jet",  # Abréviation
         r"aggrav(?:ée?|ation) (?:par (?:la |l')?)?(?:toux|effort)",
         r"œdème papillaire",
-        r"op",  # Œdème Papillaire (abrégé)
+        r"op\+\+",  # Œdème Papillaire ++ (abrégé avec intensité)
         r"flou visuel",
         r"éclipses? visuelles?",
         # Formulations variées
@@ -249,6 +255,53 @@ HTIC_PATTERNS = {
         r"aggravée? (?:le|au) matin",
         r"aggravée? au réveil",
         r"douleur matutinale"
+    ]
+}
+
+# Patterns pour traumatisme crânien récent
+TRAUMA_PATTERNS = {
+    False: [
+        r"pas de (?:trauma|traumatisme|choc|chute)",
+        r"sans (?:trauma|traumatisme|choc|chute)",
+        r"nie (?:tout )?(?:trauma|traumatisme|choc|chute)"
+    ],
+    True: [
+        r"tcc",  # Traumatisme Crânio-Cérébral
+        r"traumatisme cr[aâ]nien",
+        r"trauma cr[aâ]nien",
+        r"trauma crânio-cérébral",
+        r"avp",  # Accident Voie Publique
+        r"accident de (?:la )?voie publique",
+        r"chute",
+        r"choc (?:à la |au )?(?:tête|crâne)",
+        r"pdc",  # Perte De Connaissance
+        r"perte de connaissance",
+        r"(?:coup|choc) (?:à|sur) la tête",
+        r"(?:depuis|dep|j-|j )(?:traumatisme|trauma|chute|avp)",
+        r"contexte (?:de )?trauma"
+    ]
+}
+
+# Patterns pour traumatisme crânien récent
+TRAUMA_PATTERNS = {
+    False: [
+        r"pas de (?:trauma|traumatisme|choc|chute)",
+        r"sans (?:trauma|traumatisme|choc|chute)",
+        r"nie (?:tout )?(?:trauma|traumatisme|choc|chute)"
+    ],
+    True: [
+        r"tcc",  # Traumatisme Crânio-Cérébral
+        r"traumatisme crânien",
+        r"trauma crânien",
+        r"avp",  # Accident Voie Publique
+        r"accident (?:de )?(?:la )?voie publique",
+        r"chute",
+        r"choc (?:à la |au )?(?:tête|crâne)",
+        r"pdc",  # Perte De Connaissance
+        r"perte de connaissance",
+        r"(?:coup|choc) (?:à|sur) la tête",
+        r"j-\d+",  # J-3, J-15
+        r"contexte (?:de )?trauma"
     ]
 }
 
@@ -294,12 +347,14 @@ NEURO_DEFICIT_PATTERNS = {
         r"pas de trouble (?:neurologique|moteur|sensitif)",
         r"sans trouble (?:neurologique|moteur|sensitif)",
         r"examen neurologique normal"
+        # Note: scotome/aura RETIRÉS - peuvent coexister avec déficit réel (migraine compliquée)
     ],
     True: [
         r"déficit",
         r"dsm",  # Déficit Sensitivomoteur
         r"hémiparésie",
         r"hémipar\s*[dg]",  # hémipar D, hémipar G
+        r"hémipar\s+[dg]\s+transitoire",  # hémipar G transitoire
         r"hémiplégie",
         r"aphasie",
         r"trouble du langage",
@@ -310,7 +365,7 @@ NEURO_DEFICIT_PATTERNS = {
         r"diplopie",  # Vision double
         r"vision double",
         r"flou visuel",
-        r"scotomes?",  # Scotomes scintillants
+        # r"scotomes?" RETIRÉ - scotomes = aura migraineuse, pas déficit
         r"confusion",
         r"désorientation",
         r"troubles? mnésiques?",  # Troubles de la mémoire
@@ -651,6 +706,11 @@ def extract_duration_hours(text: str) -> Optional[float]:
     Returns:
         Durée en heures ou None
     """
+    # Pattern: "Durée Xmin" or "Durée X min"
+    match = re.search(r'durée\s*(\d+)\s*min', text, re.IGNORECASE)
+    if match:
+        return float(match.group(1)) / 60  # Convert minutes to hours
+    
     # Pattern: "X heures"
     match = re.search(r'depuis (\d+(?:\.\d+)?)\s*heures?', text, re.IGNORECASE)
     if match:
