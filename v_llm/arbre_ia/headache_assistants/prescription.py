@@ -130,14 +130,37 @@ def _format_prescription(
     
     # Précautions et contre-indications
     if case.pregnancy_postpartum:
+        urgency_level = recommendation.urgency
         lines.extend([
             "-"*70,
             "PRÉCAUTIONS IMPORTANTES",
             "-"*70,
             "PATIENTE ENCEINTE:",
-            "- IRM contre-indiquée si grossesse < 3 mois",
-            "- Scanner contre-indiqué (préférer IRM sauf urgence vitale)",
-            "- Produit de contraste: évaluer rapport bénéfice/risque",
+        ])
+        
+        if urgency_level == "immediate":
+            lines.extend([
+                "- URGENCE VITALE: Scanner acceptable (bénéfice > risque)",
+                "- Protection abdominale plombée, dose minimale",
+                "- IRM alternative si délai compatible avec urgence",
+                "- Scanner éviter si grossesse < 4 semaines (organogenèse)",
+            ])
+        elif urgency_level == "urgent":
+            lines.extend([
+                "- IRM acceptable en urgence (risque TVC > risque IRM)",
+                "- IRM idéale à partir 2e trimestre (> 13 sem)",
+                "- Scanner uniquement si urgence vitale ou IRM impossible",
+            ])
+        else:
+            lines.extend([
+                "- Privilégier IRM (éviter radiations scanner)",
+                "- IRM éviter 1er trimestre (< 13 sem) sauf urgence",
+                "- Scanner uniquement si urgence vitale",
+            ])
+        
+        lines.extend([
+            "- Gadolinium contre-indiqué pendant grossesse sauf urgence absolue",
+            "- Risque TVC augmenté : vigilance accrue",
             "",
         ])
     elif case.sex == "F" and case.age < 50:

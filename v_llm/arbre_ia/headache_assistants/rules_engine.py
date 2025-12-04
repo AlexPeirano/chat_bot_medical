@@ -281,39 +281,57 @@ def _apply_contextual_adaptations(
     contraindications = []
     
     # ========================================================================
-    # RÈGLE 1: GROSSESSE - Gestion complexe selon trimestre
+    # RÈGLE 1: GROSSESSE - Gestion selon urgence et trimestre
     # ========================================================================
     if case.pregnancy_postpartum is True:
         scanner_found = False
         irm_found = False
+        is_hsa_rule = recommendation.applied_rule_id and "HSA" in recommendation.applied_rule_id
+        is_immediate_urgency = recommendation.urgency == "immediate"
         new_imaging = []
         
         for exam in adapted_imaging:
             if "scanner" in exam.lower():
                 scanner_found = True
-                # Remplacer scanner par IRM (sauf contexte oncologique)
-                if "injection" in exam.lower() and "sans" not in exam.lower():
-                    new_imaging.append("IRM_cerebrale_avec_gadolinium")
+                # HSA et autres urgences vitales : scanner PRIORITAIRE malgré grossesse
+                if is_hsa_rule or is_immediate_urgency:
+                    # Garder scanner mais remplacer par IRM comme alternative
+                    new_imaging.append(exam)
+                    if "irm_cerebrale" not in new_imaging and "IRM_cerebrale" not in new_imaging:
+                        new_imaging.append("irm_cerebrale")
                 else:
-                    new_imaging.append("irm_cerebrale")
+                    # Contexte non urgent : privilégier IRM
+                    if "injection" in exam.lower() and "sans" not in exam.lower():
+                        new_imaging.append("IRM_cerebrale_avec_gadolinium")
+                    else:
+                        new_imaging.append("irm_cerebrale")
             elif "irm" in exam.lower():
                 irm_found = True
                 new_imaging.append(exam)
             else:
                 new_imaging.append(exam)
         
-        # Ne PAS ajouter angio-IRM veineuse automatiquement
-        # C'est à la règle PREGNANCY_001 de le prescrire si nécessaire
-        
         adapted_imaging = new_imaging
         
-        # Ajouter précautions grossesse
+        # Ajouter précautions grossesse adaptées à l'urgence
         precautions.append("PATIENTE ENCEINTE:")
         if scanner_found:
-            precautions.append("- Scanner remplacé par IRM (éviter radiations)")
-            contraindications.append("- Scanner contre-indiqué si grossesse < 2-4 semaines")
-        if irm_found or scanner_found:
-            contraindications.append("- IRM contre-indiquée si grossesse < 3 mois (privilégier scanner si urgence)")
+            if is_hsa_rule or is_immediate_urgency:
+                precautions.append("- Scanner acceptable en URGENCE VITALE (bénéfice > risque)")
+                precautions.append("- Protection abdominale plombée, dose minimale")
+                precautions.append("- IRM alternative si délai acceptable (mais moins sensible <12h pour HSA)")
+                contraindications.append("- Scanner à éviter si grossesse < 4 semaines (organogenèse)")
+            else:
+                precautions.append("- Scanner remplacé par IRM (éviter radiations)")
+                contraindications.append("- Scanner contre-indiqué sauf urgence vitale")
+        if irm_found:
+            # IRM acceptable dès 2e trimestre (13 sem), en urgence acceptable dès 1er trimestre
+            if is_immediate_urgency or recommendation.urgency == "urgent":
+                precautions.append("- IRM acceptable en urgence (risque TVC > risque IRM)")
+                precautions.append("- IRM idéale à partir 2e trimestre (> 13 sem)")
+            else:
+                contraindications.append("- IRM éviter 1er trimestre (< 13 sem) sauf urgence")
+            precautions.append("- Gadolinium contre-indiqué pendant grossesse (sauf urgence absolue)")
         precautions.append("- Risque TVC augmenté en grossesse/post-partum")
     
     # ========================================================================

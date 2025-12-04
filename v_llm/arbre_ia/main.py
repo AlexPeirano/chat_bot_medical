@@ -138,11 +138,11 @@ def main():
                             print(f"  - {exam}")
                     print("-"*70 + "\n")
                 
-                # Proposer ordonnance
-                print("Générer une ordonnance ? (oui/non ou tapez /ordonnance)")
-                gen_ord = input("Vous: ").strip().lower()
+                # Proposer ordonnance et nouveau cas
+                print("Options: [O]rdonnance, [N]ouveau cas, [Q]uitter")
+                choix = input("Vous: ").strip().lower()
                 
-                if gen_ord in ['oui', 'o', 'yes', 'y', '/ordonnance']:
+                if choix in ['ordonnance', 'o', '/ordonnance']:
                     try:
                         doctor_name = input("Nom du prescripteur (ou Entrée pour 'Dr. [NOM]'): ").strip()
                         if not doctor_name:
@@ -150,18 +150,31 @@ def main():
                         
                         filepath = generate_prescription(last_case, last_recommendation, doctor_name)
                         print(f"\nOrdonnance générée: {filepath}\n")
+                        
+                        # Après ordonnance, demander nouveau cas
+                        print("Nouveau cas ? (oui/non)")
+                        nouveau = input("Vous: ").strip().lower()
+                        if nouveau in ['oui', 'o', 'yes', 'y']:
+                            history = []
+                            session_id = None
+                            print("\nAssistant: Nouveau cas. Décrivez le cas clinique de votre patient.\n")
+                        else:
+                            print("\nAssistant: Au revoir Docteur.\n")
+                            break
                     except Exception as e:
                         print(f"\nErreur: {e}\n")
                 
-                # Demander si nouveau cas
-                print("Nouveau cas ? (oui/non)")
-                choix = input("Vous: ").strip().lower()
-                
-                if choix in ['oui', 'o', 'yes', 'y']:
+                elif choix in ['nouveau', 'n', 'new']:
                     history = []
                     session_id = None
                     print("\nAssistant: Nouveau cas. Décrivez le cas clinique de votre patient.\n")
+                
+                elif choix in ['quitter', 'q', 'quit', 'exit']:
+                    print("\nAssistant: Au revoir Docteur.\n")
+                    break
+                
                 else:
+                    # Par défaut : quitter
                     print("\nAssistant: Au revoir Docteur.\n")
                     break
             else:

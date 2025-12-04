@@ -94,6 +94,7 @@ def prioritize_missing_fields(missing_fields: List[str], case: HeadacheCase) -> 
         # Contextes à risque
         "pregnancy_postpartum": 60,
         "trauma": 55,
+        "recent_pl_or_peridural": 52,  # Céphalée post-PL = diagnostic spécifique
         "immunosuppression": 50,
         
         # Classification (moins urgent)
@@ -164,6 +165,10 @@ def generate_question_for_field(field_name: str, case: HeadacheCase) -> str:
         "trauma": (
             "Le patient a-t-il eu un traumatisme crânien récent ? "
             "(choc, chute, accident)"
+        ),
+        "recent_pl_or_peridural": (
+            "Le patient a-t-il eu une ponction lombaire ou péridurale récemment ? "
+            "(dans les derniers jours/semaines)"
         ),
         "immunosuppression": (
             "Le patient est-il immunodéprimé ? "

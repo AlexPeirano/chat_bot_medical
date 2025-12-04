@@ -103,7 +103,12 @@ PROFILE_PATTERNS = {
         r"permanente?",
         r"céphalée chronique quotidienne",
         r"depuis (?:\d+|de nombreux) mois",
-        r"depuis (?:\d+|de nombreuses) années?"
+        r"depuis (?:\d+|de nombreuses) années?",
+        r">3\s*mois",  # >3mois (notation médicale)
+        r"quotid(?:iennes?)?",  # quotid (abréviation)
+        r"(?:tous les|chaque) jours?",
+        r"cch (?:chroniques?|quotid)",  # CCH chroniques
+        r"fond (?:douloureux|migraineux)"  # Fond douloureux permanent
     ]
 }
 
@@ -456,6 +461,40 @@ TRAUMA_PATTERNS = {
     ]
 }
 
+# Patterns pour ponction lombaire ou péridurale récente (<2 semaines)
+RECENT_PL_OR_PERIDURAL_PATTERNS = {
+    False: [
+        r"pas de (?:ponction|pl|péridurale)",
+        r"sans (?:ponction|pl|péridurale)",
+        r"nie (?:ponction|pl|péridurale)"
+    ],
+    True: [
+        r"ponction lombaire",
+        r"pl\s+(?:il y a|depuis|j-?\d+)",  # PL il y a 3j, PL depuis, PL J-2
+        r"pl\s+récente?",
+        r"après pl",
+        r"post[- ]pl",
+        r"suite à (?:une )?pl",
+        r"péridurale?\s+(?:il y a|depuis|récente?)",
+        r"anesthésie péridurale",
+        r"après (?:la )?péridurale",
+        r"post[- ]péridurale",
+        r"rachianesthésie",
+        r"rachi\s+(?:il y a|depuis)",
+        r"ponction\s+(?:il y a|depuis)",
+        r"après (?:la )?ponction",
+        # Formulations avec durée
+        r"pl\s+il y a\s+\d+\s*j",  # PL il y a 3j
+        r"pl\s+j-?\d+",  # PL J-3, PL J3
+        r"péridurale\s+il y a\s+\d+\s*j",
+        r"ponction\s+il y a\s+\d+\s*j",
+        # Contexte clinique typique
+        r"céphalée.*(?:position debout|orthostatique)",
+        r"amélioration (?:en )?décubitus",
+        r"céphalée positionnelle"
+    ]
+}
+
 IMMUNOSUPPRESSION_PATTERNS = {
     True: [
         r"immunodéprim(?:é|ée?|és)",
@@ -487,16 +526,24 @@ IMMUNOSUPPRESSION_PATTERNS = {
 HEADACHE_PROFILE_PATTERNS = {
     "migraine_like": [
         r"migraine",
-        r"unilatéral",
+        r"unilatéral(?:e)?",
         r"hémicrân(?:ie|ien)",
         r"pulsatile",
         r"battante?",
+        r"lancinante?",  # Synonyme médical français
         r"photophobie",
         r"phonophobie",
+        r"photo\+",  # photo+ (notation médicale)
+        r"phono\+",  # phono+ (notation médicale)
         r"nausées?",
+        r"n\+",  # N+ (abréviation)
         r"vomissement(?:s)?",
+        r"v\+",  # V+ (abréviation)
         r"aura",
-        r"scotome"
+        r"scotome",
+        r"pulsations?",
+        r"intolérance (?:à la )?lumière",
+        r"intolérance (?:au )?bruit"
     ],
     "tension_like": [
         r"céphalée de tension",
@@ -504,9 +551,20 @@ HEADACHE_PROFILE_PATTERNS = {
         r"pression",
         r"pesanteur",
         r"en casque",
-        r"bilatérale?",
+        r"bilatérale?s?",
+        r"bilat\b",  # bilat (abréviation)
         r"serrement",
-        r"étau"
+        r"étau",
+        r"diffuses?",
+        r"non pulsatile",
+        r"type serrement",
+        r"occipito-frontal",
+        r"cervico-dorsal",
+        r"contractures? (?:cervicales?|trapèzes)",
+        r"Ø\s*(?:n/?v|photo|phono)",  # Ø = absence (notation française)
+        r"sans\s+n/?v",
+        r"pas\s+de\s+n/?v",
+        r"aucun s associé"  # Aucun S associé (signe)
     ],
     "htic_like": [
         r"HTIC",
@@ -641,6 +699,8 @@ def extract_sex(text: str) -> Optional[str]:
 def extract_intensity_score(text: str) -> Optional[int]:
     """Extrait un score d'intensité numérique (0-10).
     
+    Prend le MAXIMUM de toutes les valeurs EVA détectées (cliniquement pertinent).
+    
     Args:
         text: Texte à analyser
         
@@ -649,12 +709,23 @@ def extract_intensity_score(text: str) -> Optional[int]:
     """
     text_lower = text.lower()
     
-    # Pattern: "X/10"
-    match = re.search(r'(\d{1,2})\s*/\s*10', text)
-    if match:
+    # Pattern: "X/10" ou "X-Y/10" - chercher TOUTES les occurrences
+    all_evas = []
+    for match in re.finditer(r'(\d{1,2})(?:-(\d{1,2}))?\s*/\s*10', text):
         score = int(match.group(1))
+        if match.group(2):  # Si range, prendre valeur maximale du range
+            score2 = int(match.group(2))
+            score = max(score, score2)
         if 0 <= score <= 10:
-            return score
+            all_evas.append(score)
+    
+    # Si plusieurs EVA trouvées, retourner le maximum
+    if all_evas:
+        return max(all_evas)
+    
+    # Pattern: "EVA max" ou "EVA maximum" (fréquent en français)
+    if re.search(r'eva\s*(?:max(?:imum|imale?)?|10/10)', text_lower):
+        return 10
     
     # Pattern: "EVA X" ou "EN X" (échelles médicales)
     match = re.search(r'(?:eva|en)\s*(?:=\s*)?(\d{1,2})', text_lower)
@@ -700,26 +771,118 @@ def extract_intensity_score(text: str) -> Optional[int]:
 def extract_duration_hours(text: str) -> Optional[float]:
     """Extrait la durée de l'épisode actuel en heures.
     
+    Priorité donnée aux durées de crise plutôt qu'aux durées "depuis".
+    Pour AVF typiques: cherche "45min", "30-60min" avant "depuis 10j".
+    
     Args:
         text: Texte à analyser
         
     Returns:
         Durée en heures ou None
     """
-    # Pattern: "Durée Xmin" or "Durée X min"
-    match = re.search(r'durée\s*(\d+)\s*min', text, re.IGNORECASE)
-    if match:
-        return float(match.group(1)) / 60  # Convert minutes to hours
+    text_lower = text.lower()
     
-    # Pattern: "X heures"
-    match = re.search(r'depuis (\d+(?:\.\d+)?)\s*heures?', text, re.IGNORECASE)
+    # PRIORITÉ 1: "durée totale Xh" ou "durée Xh" (explicite)
+    match = re.search(r'durée\s+(?:totale\s+)?(\d+(?:\.\d+)?)\s*h(?:eures?)?', text_lower)
     if match:
         return float(match.group(1))
     
-    # Pattern: "X jours" -> convertir en heures
-    match = re.search(r'depuis (\d+)\s*jours?', text, re.IGNORECASE)
+    # PRIORITÉ 2: Durée de crise en minutes avec contexte
+    # "crises 45min", "durée 30-60min", "épisode 50min"
+    match = re.search(r'(?:crises?|durée|épisode)\s*(\d+)(?:-(\d+))?\s*min(?:utes?)?', text_lower)
     if match:
-        return float(match.group(1)) * 24
+        if match.group(2):  # Range: prendre moyenne
+            min_val = float(match.group(1))
+            max_val = float(match.group(2))
+            return (min_val + max_val) / (2 * 60)
+        return float(match.group(1)) / 60
+    
+    # PRIORITÉ 3: Minutes seules avec virgule (contexte crise)
+    # ", 45min," ou ", 50min." ou "EVA 10/10, 45min,"
+    match = re.search(r',\s*(\d+)\s*min(?:utes?)?\s*[,\.]', text_lower)
+    if match:
+        return float(match.group(1)) / 60
+    
+    # PRIORITÉ 4: Range de minutes seul "30-60min"
+    match = re.search(r'\b(\d+)-(\d+)\s*min(?:utes?)?\b', text_lower)
+    if match:
+        min_val = float(match.group(1))
+        max_val = float(match.group(2))
+        return (min_val + max_val) / (2 * 60)
+    
+    # PRIORITÉ 5: Minutes seules en fin de phrase ou isolées
+    # "45min" mais pas "20min puis" (qui serait une aura)
+    match = re.search(r'\b(\d+)\s*min(?:utes?)?\s*(?:[,\.]|$)', text_lower)
+    if match and not re.search(r'(\d+)\s*min(?:utes?)?\s+puis', text_lower):
+        return float(match.group(1)) / 60
+    
+    # PRIORITÉ 6: "Xh" isolé sans "depuis" (ex: "céphalée 8h")
+    # Chercher Xh mais PAS précédé de "depuis" dans les 10 caractères précédents
+    for match in re.finditer(r'\b(\d+(?:\.\d+)?)\s*h(?:eures?)?\b', text_lower):
+        pos = match.start()
+        # Vérifier contexte avant (au moins 10 caractères)
+        before = text_lower[max(0, pos-10):pos]
+        # Exclure si "depuis" dans les 10 caractères précédents
+        if 'depuis' not in before and 'dep' not in before:
+            return float(match.group(1))
+    
+    # PRIORITÉ 7: Range d'heures "12-24h" -> moyenne
+    match = re.search(r'(\d+)-(\d+)\s*h(?:eures?)?', text_lower)
+    if match:
+        min_hours = float(match.group(1))
+        max_hours = float(match.group(2))
+        return (min_hours + max_hours) / 2
+    
+    # PRIORITÉ 8: "depuis Xh" ou "dep Xh" (format français médical)
+    match = re.search(r'(?:depuis|dep)\s+(\d+(?:\.\d+)?)\s*h(?:eures?)?', text_lower)
+    if match:
+        return float(match.group(1))
+    
+    # PRIORITÉ 9: "depuis Xj" ou "dep Xj" - convertir jours en heures
+    match = re.search(r'(?:depuis|dep)\s+(\d+)\s*j(?:ours?)?(?:\b|\s)', text_lower)
+    if match:
+        days = int(match.group(1))
+        return float(days) * 24  # Convertir en heures
+    
+    # PRIORITÉ 10: "depuis X semaines" - convertir en heures
+    match = re.search(r'(?:depuis|dep)\s+(\d+)\s*sem(?:aines?)?', text_lower)
+    if match:
+        weeks = int(match.group(1))
+        return float(weeks) * 7 * 24  # Convertir en heures
+    
+    # PRIORITÉ 11: "depuis X mois" - convertir en heures (approximation 30j/mois)
+    match = re.search(r'(?:depuis|dep)\s+(\d+)\s*mois', text_lower)
+    if match:
+        months = int(match.group(1))
+        return float(months) * 30 * 24  # Approximation 30 jours par mois
+    
+    # PRIORITÉ 12: "il y a X temps" (tournure temporelle courante)
+    match = re.search(r'il y a (\d+)\s*(h(?:eures?)?|j(?:ours?)?|sem(?:aines?)?|mois)', text_lower)
+    if match:
+        value = int(match.group(1))
+        unit = match.group(2)
+        if 'h' in unit:
+            return float(value)
+        elif 'j' in unit:
+            return float(value) * 24
+        elif 'sem' in unit:
+            return float(value) * 7 * 24
+        elif 'mois' in unit:
+            return float(value) * 30 * 24
+    
+    # PRIORITÉ 13: "ça/cela fait X que" (langage familier)
+    match = re.search(r'(?:ça|cela) fait (\d+)\s*(h(?:eures?)?|j(?:ours?)?|sem(?:aines?)?|mois)', text_lower)
+    if match:
+        value = int(match.group(1))
+        unit = match.group(2)
+        if 'h' in unit:
+            return float(value)
+        elif 'j' in unit:
+            return float(value) * 24
+        elif 'sem' in unit:
+            return float(value) * 7 * 24
+        elif 'mois' in unit:
+            return float(value) * 30 * 24
     
     return None
 
@@ -778,10 +941,16 @@ def parse_free_text_to_case(text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
     age = extract_age(text)
     sex = extract_sex(text)
     
+    # Validation âge: doit être entre 1 et 120 (rejeter valeurs aberrantes)
     if age is not None:
-        extracted_data["age"] = age
-        detected_fields.append("age")
-        confidence_scores["age"] = 0.9  # Haute confiance pour pattern numérique
+        if 1 <= age <= 120:
+            extracted_data["age"] = age
+            detected_fields.append("age")
+            confidence_scores["age"] = 0.9  # Haute confiance pour pattern numérique
+        else:
+            # Âge aberrant détecté mais rejeté
+            extracted_data["age"] = 50  # Valeur par défaut
+            confidence_scores["age"] = 0.0  # Aucune confiance
     else:
         # Valeur par défaut si non détecté
         extracted_data["age"] = 50  # Âge moyen par défaut
@@ -860,8 +1029,21 @@ def parse_free_text_to_case(text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
     
     # Signes cliniques majeurs (RED FLAGS)
     
-    # 1. Fièvre
+    # 1. Fièvre (avec validation température ≥38°C)
     fever = detect_pattern(text, FEVER_PATTERNS)
+    
+    # Validation numérique stricte: température ≥38°C
+    text_for_temp = text.lower()
+    if 't°' in text_for_temp or 'température' in text_for_temp or 'temp' in text_for_temp:
+        temp_match = re.search(r'(\d+(?:\.\d+)?)\s*°', text_for_temp)
+        if temp_match:
+            temp = float(temp_match.group(1))
+            # Critère médical strict: fièvre si ≥38°C
+            if temp >= 38.0:
+                fever = True
+            elif temp < 38.0 and fever is not True:  # Éviter d'écraser un "fièvre" explicite
+                fever = False
+    
     if fever is not None:
         extracted_data["fever"] = fever
         detected_fields.append("fever")
@@ -927,6 +1109,12 @@ def parse_free_text_to_case(text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
         detected_fields.append("trauma")
         confidence_scores["trauma"] = 0.85
     
+    recent_pl_or_peridural = detect_pattern(text, RECENT_PL_OR_PERIDURAL_PATTERNS)
+    if recent_pl_or_peridural is not None:
+        extracted_data["recent_pl_or_peridural"] = recent_pl_or_peridural
+        detected_fields.append("recent_pl_or_peridural")
+        confidence_scores["recent_pl_or_peridural"] = 0.9
+    
     immunosuppression = detect_pattern(text, IMMUNOSUPPRESSION_PATTERNS)
     if immunosuppression is not None:
         extracted_data["immunosuppression"] = immunosuppression
@@ -934,8 +1122,25 @@ def parse_free_text_to_case(text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
         confidence_scores["immunosuppression"] = 0.9
     
     # Profil clinique de la céphalée
-    headache_profile = detect_pattern(text, HEADACHE_PROFILE_PATTERNS)
-    if headache_profile:
+    # Logique améliorée : compter les matches pour chaque profil
+    headache_profile_scores = {}
+    text_lower = text.lower()
+    
+    for profile_type, pattern_list in HEADACHE_PROFILE_PATTERNS.items():
+        score = 0
+        for pattern in pattern_list:
+            if re.search(pattern, text_lower):
+                score += 1
+        if score > 0:
+            headache_profile_scores[profile_type] = score
+    
+    # Bonus pour tension_like si absence explicite de signes migraineux
+    if any(re.search(pattern, text_lower) for pattern in [r"Ø\s*(?:n/?v|photo|phono)", r"sans\s+n/?v", r"pas\s+de\s+n/?v", r"aucun s associé"]):
+        headache_profile_scores["tension_like"] = headache_profile_scores.get("tension_like", 0) + 3
+    
+    # Sélectionner le profil avec le meilleur score
+    if headache_profile_scores:
+        headache_profile = max(headache_profile_scores, key=headache_profile_scores.get)
         extracted_data["headache_profile"] = headache_profile
         detected_fields.append("headache_profile")
         confidence_scores["headache_profile"] = 0.75
@@ -1016,9 +1221,47 @@ def parse_free_text_to_case(text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
             detected_fields.append("profile")
             confidence_scores["profile"] = 0.9
     
+    # ÉTAPE 2.6: Inférence du profile depuis la durée (si profile toujours unknown)
+    # ============================================================================
+    # Si aucun pattern temporel n'a matché mais qu'on a extrait une durée,
+    # on infère le profile automatiquement
+    
+    if case.profile == "unknown" and case.duration_current_episode_hours is not None:
+        if case.duration_current_episode_hours < 168:  # < 7 jours (1 semaine)
+            case = case.model_copy(update={"profile": "acute"})
+            detected_fields.append("profile")
+            confidence_scores["profile"] = 0.85
+        elif case.duration_current_episode_hours < 2160:  # < 90 jours (3 mois)
+            case = case.model_copy(update={"profile": "subacute"})
+            detected_fields.append("profile")
+            confidence_scores["profile"] = 0.85
+        else:
+            case = case.model_copy(update={"profile": "chronic"})
+            detected_fields.append("profile")
+            confidence_scores["profile"] = 0.85
+    
     # ========================================================================
     # ÉTAPE 3: Métadonnées d'extraction
     # ========================================================================
+    
+    # Détection de contradictions dans le texte
+    contradictions = []
+    
+    # Contradiction onset
+    if case.onset in ['thunderclap', 'progressive']:
+        if 'progressive' in text_lower and ('brutal' in text_lower or 'thunderclap' in text_lower):
+            contradictions.append('onset_conflicting')
+    
+    # Contradiction fièvre
+    if case.fever is True and any(word in text_lower for word in ['apyrétique', 'apyr', 'sans fièvre']):
+        contradictions.append('fever_conflicting')
+    
+    # Contradiction durée vs profile
+    if case.duration_current_episode_hours and case.profile != "unknown":
+        if case.duration_current_episode_hours < 168 and case.profile == "chronic":
+            contradictions.append('duration_profile_mismatch')
+        elif case.duration_current_episode_hours >= 2160 and case.profile == "acute":
+            contradictions.append('duration_profile_mismatch')
     
     metadata = {
         "detected_fields": detected_fields,
@@ -1027,6 +1270,7 @@ def parse_free_text_to_case(text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
         "extraction_method": "rule_based",
         "timestamp": datetime.now().isoformat(),
         "original_text": text,
+        "contradictions": contradictions,  # Nouvelle métadonnée
         
         # TODO_LLM_5: Métadonnées additionnelles avec LLM
         # -------------------------------------------------------------------
@@ -1130,5 +1374,8 @@ def get_missing_critical_fields(case: HeadacheCase) -> list[str]:
     
     if case.htic_pattern is None:
         critical_fields.append("htic_pattern")
+    
+    if case.recent_pl_or_peridural is None:
+        critical_fields.append("recent_pl_or_peridural")
     
     return critical_fields
