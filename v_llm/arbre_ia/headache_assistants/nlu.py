@@ -844,12 +844,19 @@ def extract_duration_hours(text: str) -> Optional[float]:
         days = int(match.group(1))
         return float(days) * 24  # Convertir en heures
     
-    # PRIORITÉ 10: "depuis X semaines" - convertir en heures
+    # PRIORITÉ 10: "depuis X semaines" ou "X sem" isolé - convertir en heures
+    # Chercher d'abord avec "depuis/dep" (priorité haute)
     match = re.search(r'(?:depuis|dep)\s+(\d+)\s*sem(?:aines?)?', text_lower)
     if match:
         weeks = int(match.group(1))
         return float(weeks) * 7 * 24  # Convertir en heures
-    
+
+    # Sinon chercher "X sem" ou "X semaines" isolé (ex: "progressive 3 sem")
+    match = re.search(r'\b(\d+)\s*sem(?:aines?)?\b', text_lower)
+    if match:
+        weeks = int(match.group(1))
+        return float(weeks) * 7 * 24  # Convertir en heures
+
     # PRIORITÉ 11: "depuis X mois" - convertir en heures (approximation 30j/mois)
     match = re.search(r'(?:depuis|dep)\s+(\d+)\s*mois', text_lower)
     if match:
