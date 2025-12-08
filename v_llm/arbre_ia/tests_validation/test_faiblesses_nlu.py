@@ -167,9 +167,17 @@ class TestFormulationsInhabituelles:
         text = "Céphalée déclenchée par la toux et les efforts"
         case, meta = parse_free_text_to_case_v2(text)
 
-        # "toux" + "effort" devrait être HTIC
-        assert case.htic_pattern is True, \
-            "Aggravation toux/effort suggère HTIC"
+        # "toux" + "effort" SEUL ne suffit PAS pour HTIC (peut être céphalée bénigne à la toux)
+        # HTIC nécessite: vomissements en jet OU céphalée matutinale + vomissements
+        # Pour éviter les faux positifs, le système ne détecte PAS HTIC avec ce texte
+        assert case.htic_pattern is None, \
+            "Aggravation toux/effort seul ne devrait PAS déclencher HTIC (faux positif possible)"
+
+        # Test avec vomissements en jet = HTIC confirmé
+        text_with_vomiting = "Céphalée avec vomissements en jet aggravée à la toux"
+        case2, meta2 = parse_free_text_to_case_v2(text_with_vomiting)
+        assert case2.htic_pattern is True, \
+            "Vomissements en jet = signe fort d'HTIC"
 
     def test_algie_vasculaire_face_AVF(self):
         """AVF = Algie Vasculaire Face (pas accident)."""

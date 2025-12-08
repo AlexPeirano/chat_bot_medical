@@ -509,6 +509,65 @@
         "urgency": "none",
         "comment": "Céphalée de tension typique. Critères: ≥2 parmi (pression/pesanteur, intensité légère-modérée, bilatérale postérieure, pas d'aggravation effort) + absence (nausées/vomissements, photo/phonophobie). Durée 30min-7j ou quotidienne. Composante psychologique fréquente. Pas d'imagerie. Traitement: antalgiques, relaxation, gestion stress."
       }
+    },
+    {
+      "id": "NEVRALGIE_TRIJUMEAU_001",
+      "name": "Névralgie du Trijumeau (NT)",
+      "description": "Douleur faciale unilatérale à type de décharge électrique de quelques secondes, déclenchée par zone gâchette. IRM systématique pour rechercher cause (conflit vasculo-nerveux, tumeur, SEP, zona).",
+      "category": "chronic_neuropathic",
+      "logic": "all",
+      "conditions": {
+        "facial_pain": true,
+        "electric_shock_type": true,
+        "brief_duration": true,
+        "trigger_zone": true
+      },
+      "recommendation": {
+        "imaging": [
+          "irm_cerebrale",
+          "irm_coupes_fines_trijumeau"
+        ],
+        "urgency": "delayed",
+        "comment": "Névralgie du trijumeau: douleur faciale unilatérale (V2/V3 >> V1), décharge électrique de quelques secondes à 2 minutes, déclenchée par zone gâchette (parole, mastication, contact). IRM cérébrale systématique avec coupes fines sur le trajet du nerf trijumeau + injection de Gadolinium pour rechercher cause secondaire: conflit vasculo-nerveux (le plus fréquent), tumeur (neurinome, méningiome), SEP (plaques démyélinisantes), zona (rare). Traitement: carbamazépine 1ère intention. Chirurgie si échec médical."
+      }
+    },
+    {
+      "id": "NEUROPATHIE_CRANIENNE_001",
+      "name": "Neuropathies crâniennes douloureuses",
+      "description": "Douleur localisée au territoire sensitif d'un nerf crânien (facial, glossopharyngien, grand nerf occipital) à type de névralgie ou neuropathie. IRM avec coupes fines pour rechercher lésion sur le trajet du nerf.",
+      "category": "chronic_neuropathic",
+      "logic": "all",
+      "conditions": {
+        "cranial_nerve_pain": true,
+        "neuropathic_pattern": true
+      },
+      "recommendation": {
+        "imaging": [
+          "irm_cerebrale",
+          "irm_coupes_fines_nerf"
+        ],
+        "urgency": "delayed",
+        "comment": "Neuropathie crânienne douloureuse: douleur localisée au territoire d'un nerf crânien (nerf facial/VII bis, glossopharyngien/IX, grand nerf occipital). Types: 1) Névralgie = décharge électrique paroxystique (comme NT), 2) Douleur neuropathique = brûlure continue. IRM cérébrale avec Gadolinium + coupes fines sur le trajet du nerf concerné, du noyau dans le tronc cérébral aux branches périphériques. Recherche: conflit vasculo-nerveux, compression tumorale, SEP, zona (ganglion géniculé), névrite post-infectieuse. Traitement: antiépileptiques (gabapentine, prégabaline) ou antidépresseurs (amitriptyline) selon le type."
+      }
+    },
+    {
+      "id": "CCQ_IMAGING_SYSTEMATIC",
+      "name": "Céphalée Chronique Quotidienne (CCQ) - Imagerie systématique",
+      "description": "Céphalée ≥15 jours/mois depuis >3 mois. IRM systématique au moins une fois pour éliminer cause secondaire chronique (HTIC, tumeur, hypotension intracrânienne).",
+      "category": "chronic_primary",
+      "logic": "all",
+      "conditions": {
+        "profile": "chronic",
+        "frequency_days_per_month": 15,
+        "duration_months": 3
+      },
+      "recommendation": {
+        "imaging": [
+          "irm_cerebrale"
+        ],
+        "urgency": "delayed",
+        "comment": "Céphalée Chronique Quotidienne (CCQ): définition = céphalée présente ≥15 jours par mois depuis au moins 3 mois. Causes: migraine chronique (la plus fréquente), céphalée de tension chronique, abus médicamenteux (céphalée de rebond), causes secondaires rares. IMPORTANT: IRM cérébrale SYSTÉMATIQUE au moins une fois chez tout patient présentant une CCQ, même si le diagnostic clinique semble correspondre à une migraine chronique ou céphalée de tension. Objectif: éliminer cause secondaire chronique (processus expansif à croissance lente, HTIC idiopathique, hypotension intracrânienne spontanée, malformation vasculaire). Ne PAS répéter l'imagerie si 1ère IRM normale et pas de modification clinique. Traitement: sevrage médicamenteux si abus, prophylaxie migraine, gestion stress."
+      }
     }
   ],
   "red_flags_catalog": {

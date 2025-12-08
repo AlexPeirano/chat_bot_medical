@@ -15,8 +15,8 @@ from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
 
 from .models import ChatMessage, ChatResponse, HeadacheCase, ImagingRecommendation
+from .nlu_hybrid import HybridNLU
 from .nlu import (
-    parse_free_text_to_case,
     suggest_clarification_questions,
     get_missing_critical_fields
 )
@@ -412,6 +412,16 @@ def should_end_dialogue(case: HeadacheCase, missing_fields: List[str]) -> Tuple[
 # TODO: Remplacer par une base de données ou cache Redis en production
 _active_sessions: Dict[str, Dict[str, Any]] = {}
 
+# Instance globale de HybridNLU (éviter de recharger l'embedding à chaque appel)
+_hybrid_nlu: Optional[HybridNLU] = None
+
+def _get_hybrid_nlu() -> HybridNLU:
+    """Récupère l'instance globale de HybridNLU (singleton pattern)."""
+    global _hybrid_nlu
+    if _hybrid_nlu is None:
+        _hybrid_nlu = HybridNLU()
+    return _hybrid_nlu
+
 
 def get_or_create_session(session_id: Optional[str] = None) -> Tuple[str, Dict[str, Any]]:
     """Récupère ou crée une session de dialogue.
@@ -434,6 +444,7 @@ def get_or_create_session(session_id: Optional[str] = None) -> Tuple[str, Dict[s
         "extraction_metadata": {},
         "asked_fields": [],  # Champs déjà questionnés (éviter répétitions)
         "last_asked_field": None,  # Dernier champ questionné (pour interpréter oui/non)
+        "accumulated_special_patterns": [],  # Patterns spéciaux détectés durant toute la session
     }
     
     return new_session_id, _active_sessions[new_session_id]
@@ -507,16 +518,29 @@ def handle_user_message(
             # Créer un extracted_case vide pour la cohérence
             extracted_case = current_case_before
         else:
-            # Sinon, parser normalement
-            extracted_case, extraction_metadata = parse_free_text_to_case(user_text)
+            # Sinon, parser normalement avec HybridNLU (utilise embedding si nécessaire)
+            hybrid_nlu = _get_hybrid_nlu()
+            extracted_case, extraction_metadata = hybrid_nlu.parse_free_text_to_case(user_text)
             session_data["extraction_metadata"] = extraction_metadata
+
+            # Accumuler les patterns spéciaux détectés (ne pas les perdre)
+            new_patterns = extraction_metadata.get("enhancement_details", {}).get("special_patterns_detected", [])
+            if new_patterns:
+                session_data["accumulated_special_patterns"].extend(new_patterns)
+
             current_case = merge_cases(session_data["current_case"], extracted_case)
             session_data["current_case"] = current_case
     else:
-        # Parser le texte normalement
-        extracted_case, extraction_metadata = parse_free_text_to_case(user_text)
+        # Parser le texte normalement avec HybridNLU (utilise embedding si nécessaire)
+        hybrid_nlu = _get_hybrid_nlu()
+        extracted_case, extraction_metadata = hybrid_nlu.parse_free_text_to_case(user_text)
         session_data["extraction_metadata"] = extraction_metadata
-        
+
+        # Accumuler les patterns spéciaux détectés (ne pas les perdre)
+        new_patterns = extraction_metadata.get("enhancement_details", {}).get("special_patterns_detected", [])
+        if new_patterns:
+            session_data["accumulated_special_patterns"].extend(new_patterns)
+
         # ÉTAPE 3: Fusionner avec le cas en cours
         if session_data["current_case"] is None:
             # Premier message: c'est le cas initial
@@ -562,11 +586,13 @@ def handle_user_message(
             recommendation = _get_fallback_recommendation(current_case)
             recommendation.comment += f" (Évaluation de secours activée: {str(e)})"
         
-        # Construire message de réponse
+        # Construire message de réponse (inclure patterns spéciaux accumulés durant la session)
+        special_patterns = session_data.get("accumulated_special_patterns", [])
         response_message = _build_final_response_message(
             current_case,
             recommendation,
-            end_reason
+            end_reason,
+            special_patterns
         )
         
         return ChatResponse(
@@ -641,18 +667,21 @@ def _build_clarification_message(
 def _build_final_response_message(
     case: HeadacheCase,
     recommendation: ImagingRecommendation,
-    end_reason: str
+    end_reason: str,
+    special_patterns: List[Dict[str, Any]] = None
 ) -> str:
     """Construit le message final avec recommandation.
-    
+
     Args:
         case: Cas clinique complet
         recommendation: Recommandation d'imagerie
         end_reason: Raison de fin de dialogue
-        
+        special_patterns: Patterns spéciaux détectés par embedding (névralgies, etc.)
+
     Returns:
         Message formaté avec recommandation
     """
+    special_patterns = special_patterns or []
     # En-tête selon urgence
     if recommendation.urgency == "immediate":
         header = "URGENCE MÉDICALE DÉTECTÉE\n\n"
@@ -665,7 +694,27 @@ def _build_final_response_message(
     
     # Corps du message
     body = f"{recommendation.comment}\n\n"
-    
+
+    # Patterns spéciaux détectés par embedding (névralgies, CCQ, etc.)
+    if special_patterns:
+        body += "Diagnostic différentiel suggéré (via analyse sémantique):\n"
+        for pattern in special_patterns:
+            pattern_type = pattern.get("type", "unknown")
+            description = pattern.get("description", "")
+            similarity = pattern.get("similarity", 0.0)
+            imaging = pattern.get("imaging_recommendation", "")
+
+            if pattern_type == "neuralgia":
+                body += f"  - {description} (similarité: {similarity:.2f})\n"
+                if imaging:
+                    body += f"    → IRM recommandée: {imaging.replace('_', ' ')}\n"
+            elif pattern_type == "chronic_daily_headache":
+                body += f"  - {description} (similarité: {similarity:.2f})\n"
+                note = pattern.get("note", "")
+                if note:
+                    body += f"    → {note}\n"
+        body += "\n"
+
     # Examens recommandés
     if len(recommendation.imaging) > 0 and "aucun" not in recommendation.imaging:
         body += "Examens recommandés:\n"

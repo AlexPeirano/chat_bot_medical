@@ -1112,8 +1112,9 @@ class MedicalVocabulary:
         for pattern in vocab_true.get("clinical_patterns", []):
             if self.normalize_text(pattern) in text_norm:
                 # Vomissements en jet = SIGNE FORT HTIC (haute confiance)
-                is_strong_sign = any(term in self.normalize_text(pattern)
-                                    for term in ["vomissement en jet", "vom en jet", "cephalee matutinale"])
+                pattern_norm = self.normalize_text(pattern)
+                is_strong_sign = any(term in pattern_norm
+                                    for term in ["vomissement en jet", "vomissements en jet", "vom en jet", "cephalee matutinale"])
                 confidence = vocab_true["confidence"] if is_strong_sign else vocab_true["confidence"] * 0.60
 
                 return DetectionResult(

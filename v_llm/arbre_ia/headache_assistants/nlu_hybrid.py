@@ -258,6 +258,38 @@ class HybridNLU:
                             "support_examples": vote[1]
                         })
 
+        # Détecter patterns spéciaux dans les annotations (névralgies, CCQ, etc.)
+        # Ces patterns ne sont pas dans le modèle HeadacheCase mais doivent être signalés
+        special_patterns = []
+        for ex, sim in zip(top_examples, top_similarities):
+            if sim > 0.65:  # Seuil de similarité élevé
+                annotations = ex.get("annotations", {})
+                source = annotations.get("source", "")
+
+                # Détecter névralgies
+                if any(keyword in source.lower() for keyword in ["névralgie", "neuropathie"]):
+                    special_patterns.append({
+                        "type": "neuralgia",
+                        "description": source,
+                        "similarity": float(sim),
+                        "imaging_recommendation": annotations.get("imaging", "irm_cerebrale"),
+                        "matched_text": ex["text"]
+                    })
+
+                # Détecter CCQ
+                if "ccq" in source.lower() or "chronique quotidienne" in source.lower():
+                    special_patterns.append({
+                        "type": "chronic_daily_headache",
+                        "description": source,
+                        "similarity": float(sim),
+                        "imaging_recommendation": "irm_cerebrale",
+                        "note": annotations.get("note", ""),
+                        "matched_text": ex["text"]
+                    })
+
+        if special_patterns:
+            enhancement_details["special_patterns_detected"] = special_patterns
+
         # Reconstruire le cas
         case = HeadacheCase(**case_dict)
 

@@ -384,6 +384,107 @@ MEDICAL_EXAMPLES: List[Dict[str, Any]] = [
             "keywords": ["serre fort", "travaille ordinateur"]
         }
     },
+    # ========================================================================
+    # NÉVRALGIES ET NEUROPATHIES CRÂNIENNES
+    # ========================================================================
+    {
+        "text": "Douleur faciale comme une décharge électrique quand je parle",
+        "facial_pain": True,
+        "neuropathic_pattern": True,
+        "profile": "chronic",
+        "annotations": {
+            "source": "Névralgie du trijumeau typique",
+            "keywords": ["décharge électrique", "quand je parle", "faciale"],
+            "imaging": "irm_cerebrale"
+        }
+    },
+    {
+        "text": "Éclairs douloureux dans la joue déclenchés par la mastication",
+        "facial_pain": True,
+        "neuropathic_pattern": True,
+        "profile": "chronic",
+        "annotations": {
+            "source": "Névralgie trijumeau V2/V3",
+            "keywords": ["éclairs", "joue", "mastication"],
+            "imaging": "irm_cerebrale"
+        }
+    },
+    {
+        "text": "Douleur en coup de poignard côté droit du visage quelques secondes",
+        "facial_pain": True,
+        "neuropathic_pattern": True,
+        "profile": "chronic",
+        "annotations": {
+            "source": "Névralgie trijumeau (durée brève)",
+            "keywords": ["coup de poignard", "visage", "quelques secondes"],
+            "imaging": "irm_cerebrale"
+        }
+    },
+    {
+        "text": "Douleur faciale fulgurante déclenchée par le contact de la peau",
+        "facial_pain": True,
+        "neuropathic_pattern": True,
+        "profile": "chronic",
+        "annotations": {
+            "source": "Névralgie trijumeau (zone gâchette)",
+            "keywords": ["fulgurante", "déclenchée", "contact peau"],
+            "imaging": "irm_cerebrale"
+        }
+    },
+    {
+        "text": "Brûlure continue sur la moitié du visage depuis zona",
+        "facial_pain": True,
+        "neuropathic_pattern": True,
+        "profile": "chronic",
+        "annotations": {
+            "source": "Névralgie post-zostérienne",
+            "keywords": ["brûlure continue", "zona"],
+            "imaging": "irm_cerebrale"
+        }
+    },
+    {
+        "text": "Douleur derrière l'oreille irradiant vers la mâchoire",
+        "cranial_nerve_pain": True,
+        "neuropathic_pattern": True,
+        "profile": "chronic",
+        "annotations": {
+            "source": "Névralgie du nerf glossopharyngien (IX)",
+            "keywords": ["derrière oreille", "mâchoire"],
+            "imaging": "irm_cerebrale"
+        }
+    },
+    {
+        "text": "Douleur à l'arrière du crâne comme des coups de couteau",
+        "cranial_nerve_pain": True,
+        "neuropathic_pattern": True,
+        "profile": "chronic",
+        "annotations": {
+            "source": "Névralgie du grand nerf occipital",
+            "keywords": ["arrière crâne", "coups de couteau"],
+            "imaging": "irm_cerebrale"
+        }
+    },
+    {
+        "text": "Céphalée tous les jours depuis 6 mois intensité modérée",
+        "profile": "chronic",
+        "frequency_high": True,
+        "annotations": {
+            "source": "Céphalée chronique quotidienne (CCQ)",
+            "keywords": ["tous les jours", "6 mois"],
+            "imaging": "irm_cerebrale",
+            "note": "IRM systématique pour CCQ ≥15j/mois depuis >3 mois"
+        }
+    },
+    {
+        "text": "Mal de tête présent plus de 15 jours par mois depuis 4 mois",
+        "profile": "chronic",
+        "frequency_high": True,
+        "annotations": {
+            "source": "CCQ - critères diagnostiques",
+            "keywords": ["15 jours par mois", "4 mois"],
+            "imaging": "irm_cerebrale"
+        }
+    },
 ]
 
 
