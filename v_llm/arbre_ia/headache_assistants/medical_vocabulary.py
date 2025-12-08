@@ -429,6 +429,56 @@ class MedicalVocabulary:
         }
 
         # ====================================================================
+        # CHANGEMENT RÉCENT DE PATTERN (pour céphalées chroniques)
+        # ====================================================================
+        self.pattern_change_vocabulary = {
+            True: {
+                "canonical": [
+                    "changement récent", "modification récente",
+                    "aggravation récente", "aggravé récemment"
+                ],
+                "temporal_markers": [
+                    "pire depuis", "pire dep", "aggravé depuis",
+                    "aggravée depuis", "plus forte depuis",
+                    "changé depuis", "différent depuis",
+                    "nouveau depuis", "nouvel épisode",
+                    "jamais eu ça avant", "inhabituel",
+                    "jamais comme ça", "pas comme d'habitude",
+                    "pas comme avant", "différent d'habitude"
+                ],
+                "intensity_change": [
+                    "beaucoup plus forte", "beaucoup plus intense",
+                    "intensité augmentée", "intensité croissante",
+                    "douleur accrue", "s'aggrave", "empire",
+                    "devient de pire en pire"
+                ],
+                "new_symptoms": [
+                    "nouveaux symptômes", "nouveau symptôme",
+                    "maintenant avec", "accompagné maintenant de",
+                    "en plus maintenant", "apparition de"
+                ],
+                "temporal_windows": [
+                    "depuis 1 semaine", "depuis une semaine",
+                    "depuis quelques jours", "depuis qqs jours",
+                    "depuis 2 semaines", "depuis 1 mois"
+                ],
+                "confidence": 0.85
+            },
+            False: {
+                "canonical": [
+                    "non", "aucun changement", "stable", "pareil", "comme d'habitude",
+                    "pas de changement", "toujours pareil",
+                    "habituelle", "habituel", "connue"
+                ],
+                "synonyms": [
+                    "aucune modification", "inchangé", "inchangée",
+                    "identique", "même chose", "pas vraiment", "pas spécialement"
+                ],
+                "confidence": 0.80
+            }
+        }
+
+        # ====================================================================
         # CARACTÉRISTIQUES DE CÉPHALÉE (Profil clinique)
         # ====================================================================
         self.headache_characteristics_vocabulary = {
@@ -1058,16 +1108,21 @@ class MedicalVocabulary:
                     source="acronym"
                 )
 
-        # Patterns cliniques
+        # Patterns cliniques - Distinguer signes forts vs faibles
         for pattern in vocab_true.get("clinical_patterns", []):
             if self.normalize_text(pattern) in text_norm:
+                # Vomissements en jet = SIGNE FORT HTIC (haute confiance)
+                is_strong_sign = any(term in self.normalize_text(pattern)
+                                    for term in ["vomissement en jet", "vom en jet", "cephalee matutinale"])
+                confidence = vocab_true["confidence"] if is_strong_sign else vocab_true["confidence"] * 0.60
+
                 return DetectionResult(
                     detected=True,
                     value=True,
-                    confidence=vocab_true["confidence"],
+                    confidence=confidence,
                     matched_term=pattern,
                     canonical_form="HTIC",
-                    source="clinical_pattern"
+                    source="clinical_pattern_strong" if is_strong_sign else "clinical_pattern_weak"
                 )
 
         # Signes ophtalmologiques
@@ -1082,16 +1137,18 @@ class MedicalVocabulary:
                     source="ophtalmo_sign"
                 )
 
-        # Phrases temporelles
+        # Phrases temporelles - CONFIANCE BASSE car insuffisant seul pour HTIC
+        # "pire le matin" seul n'est PAS HTIC (peut être migraine, céphalée tension)
+        # HTIC nécessite: céphalée matutinale + vomissements en jet OU œdème papillaire
         for phrase in vocab_true.get("temporal_phrases", []):
             if self.normalize_text(phrase) in text_norm:
                 return DetectionResult(
                     detected=True,
                     value=True,
-                    confidence=vocab_true["confidence"] * 0.90,
+                    confidence=vocab_true["confidence"] * 0.50,  # Réduit de 0.90 à 0.50
                     matched_term=phrase,
                     canonical_form="HTIC",
-                    source="temporal"
+                    source="temporal_weak"  # Marqué comme faible
                 )
 
         # Termes canoniques
@@ -1565,6 +1622,98 @@ class MedicalVocabulary:
                     matched_term=term,
                     canonical_form="immunodépression",
                     source="canonical"
+                )
+
+        return DetectionResult(detected=False, value=None, confidence=0.0)
+
+    def detect_pattern_change(self, text: str) -> DetectionResult:
+        """Détecte un changement récent dans le pattern d'une céphalée chronique.
+
+        Utile pour différencier:
+        - Céphalée chronique STABLE (pas d'urgence)
+        - Céphalée chronique AGGRAVÉE (nécessite évaluation urgente)
+
+        Args:
+            text: Texte médical
+
+        Returns:
+            DetectionResult avec recent_pattern_change True/False/None
+        """
+        text_norm = self.normalize_text(text)
+
+        # Chercher négations/stabilité d'abord
+        vocab_false = self.pattern_change_vocabulary[False]
+        for term in vocab_false.get("canonical", []) + vocab_false.get("synonyms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=False,
+                    confidence=vocab_false["confidence"],
+                    matched_term=term,
+                    canonical_form="stable",
+                    source="stability"
+                )
+
+        vocab_true = self.pattern_change_vocabulary[True]
+
+        # Termes canoniques
+        for term in vocab_true.get("canonical", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=term,
+                    canonical_form="changement récent",
+                    source="canonical"
+                )
+
+        # Marqueurs temporels (pire depuis, etc.)
+        for marker in vocab_true.get("temporal_markers", []):
+            if self.normalize_text(marker) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=marker,
+                    canonical_form="changement récent",
+                    source="temporal_marker"
+                )
+
+        # Changement d'intensité
+        for phrase in vocab_true.get("intensity_change", []):
+            if self.normalize_text(phrase) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.95,
+                    matched_term=phrase,
+                    canonical_form="changement récent",
+                    source="intensity_change"
+                )
+
+        # Nouveaux symptômes
+        for phrase in vocab_true.get("new_symptoms", []):
+            if self.normalize_text(phrase) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=phrase,
+                    canonical_form="changement récent",
+                    source="new_symptoms"
+                )
+
+        # Fenêtres temporelles ("depuis 1 semaine")
+        for window in vocab_true.get("temporal_windows", []):
+            if self.normalize_text(window) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.90,
+                    matched_term=window,
+                    canonical_form="changement récent",
+                    source="temporal_window"
                 )
 
         return DetectionResult(detected=False, value=None, confidence=0.0)

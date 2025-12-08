@@ -74,18 +74,18 @@ class HybridNLU:
     def _initialize_embedding(self, model_name: str):
         """Initialise le modèle d'embedding et pré-calcule les embeddings."""
         try:
-            print(f"🔄 Chargement du modèle embedding '{model_name}'...")
+            print(f"[INIT] Chargement du modèle embedding '{model_name}'...")
             self.embedder = SentenceTransformer(model_name)
 
             # Pré-calculer les embeddings du corpus
-            print(f"🔄 Pré-calcul des embeddings pour {len(self.examples)} exemples...")
+            print(f"[INIT] Pré-calcul des embeddings pour {len(self.examples)} exemples...")
             texts = [ex["text"] for ex in self.examples]
             self.example_embeddings = self.embedder.encode(
                 texts,
                 convert_to_numpy=True,
                 show_progress_bar=False
             )
-            print(f"✅ Modèle embedding initialisé ({self.example_embeddings.shape})")
+            print(f"[OK] Modèle embedding initialisé ({self.example_embeddings.shape})")
 
         except Exception as e:
             warnings.warn(f"Erreur initialisation embedding: {e}. Mode règles uniquement.")

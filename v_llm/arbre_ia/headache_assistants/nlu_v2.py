@@ -157,17 +157,30 @@ class NLUv2:
                 "source": meningeal_result.source
             }
 
-        # 5.3 HTIC
+        # 5.3 HTIC - SEUIL DE CONFIANCE pour éviter faux positifs
+        # "pire le matin" seul (confiance 0.45) ne devrait PAS déclencher HTIC
+        # HTIC nécessite: vomissements en jet OU œdème papillaire OU céphalée matutinale + autre signe
+        HTIC_CONFIDENCE_THRESHOLD = 0.70  # Seuil pour valider HTIC
         htic_result = self.vocab.detect_htic(text)
         if htic_result.detected and htic_result.value is True:
-            extracted_data["htic_pattern"] = True
-            detected_fields.append("htic_pattern")
-            confidence_scores["htic_pattern"] = htic_result.confidence
-            detection_trace["htic_pattern"] = {
-                "matched_term": htic_result.matched_term,
-                "canonical": htic_result.canonical_form,
-                "source": htic_result.source
-            }
+            # Appliquer seuil de confiance
+            if htic_result.confidence >= HTIC_CONFIDENCE_THRESHOLD:
+                extracted_data["htic_pattern"] = True
+                detected_fields.append("htic_pattern")
+                confidence_scores["htic_pattern"] = htic_result.confidence
+                detection_trace["htic_pattern"] = {
+                    "matched_term": htic_result.matched_term,
+                    "canonical": htic_result.canonical_form,
+                    "source": htic_result.source
+                }
+            # Si confiance < seuil, ne pas détecter HTIC (éviter faux positifs)
+            # Tracer quand même pour debugging
+            elif htic_result.confidence > 0:
+                detection_trace["htic_pattern_low_confidence"] = {
+                    "matched_term": htic_result.matched_term,
+                    "confidence": htic_result.confidence,
+                    "reason": "below_threshold"
+                }
 
         # 5.4 DÉFICIT NEUROLOGIQUE
         neuro_result = self.vocab.detect_neuro_deficit(text)
@@ -238,6 +251,18 @@ class NLUv2:
                 "matched_term": immunosup_result.matched_term,
                 "canonical": immunosup_result.canonical_form,
                 "source": immunosup_result.source
+            }
+
+        # 6.5 CHANGEMENT RÉCENT DE PATTERN (céphalées chroniques)
+        pattern_change_result = self.vocab.detect_pattern_change(text)
+        if pattern_change_result.detected:
+            extracted_data["recent_pattern_change"] = pattern_change_result.value
+            detected_fields.append("recent_pattern_change")
+            confidence_scores["recent_pattern_change"] = pattern_change_result.confidence
+            detection_trace["recent_pattern_change"] = {
+                "matched_term": pattern_change_result.matched_term,
+                "canonical": pattern_change_result.canonical_form,
+                "source": pattern_change_result.source
             }
 
         # ====================================================================

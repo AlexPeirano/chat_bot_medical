@@ -1063,12 +1063,17 @@ def parse_free_text_to_case(text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
         detected_fields.append("meningeal_signs")
         confidence_scores["meningeal_signs"] = 0.95  # Haute confiance car critique
     
-    # 3. Pattern HTIC
-    htic = detect_pattern(text, HTIC_PATTERNS)
-    if htic is True:
+    # 3. Pattern HTIC - Utiliser vocabulaire médical avec seuil de confiance
+    # "pire le matin" seul ne devrait PAS déclencher HTIC (faux positif)
+    from headache_assistants.medical_vocabulary import MedicalVocabulary
+    vocab = MedicalVocabulary()  # Instance réutilisée pour autres détections
+    HTIC_CONFIDENCE_THRESHOLD = 0.70  # Seuil pour valider HTIC
+
+    htic_result = vocab.detect_htic(text)
+    if htic_result.detected and htic_result.value is True and htic_result.confidence >= HTIC_CONFIDENCE_THRESHOLD:
         extracted_data["htic_pattern"] = True
         detected_fields.append("htic_pattern")
-        confidence_scores["htic_pattern"] = 0.85
+        confidence_scores["htic_pattern"] = htic_result.confidence
     
     # 4. Déficit neurologique
     neuro_deficit = detect_pattern(text, NEURO_DEFICIT_PATTERNS)
@@ -1116,6 +1121,13 @@ def parse_free_text_to_case(text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
         detected_fields.append("trauma")
         confidence_scores["trauma"] = 0.85
     
+    # Changement récent de pattern (pour céphalées chroniques)
+    recent_pattern_change_result = vocab.detect_pattern_change(text)
+    if recent_pattern_change_result.detected:
+        extracted_data["recent_pattern_change"] = recent_pattern_change_result.value
+        detected_fields.append("recent_pattern_change")
+        confidence_scores["recent_pattern_change"] = recent_pattern_change_result.confidence
+
     recent_pl_or_peridural = detect_pattern(text, RECENT_PL_OR_PERIDURAL_PATTERNS)
     if recent_pl_or_peridural is not None:
         extracted_data["recent_pl_or_peridural"] = recent_pl_or_peridural
@@ -1384,5 +1396,10 @@ def get_missing_critical_fields(case: HeadacheCase) -> list[str]:
     
     if case.recent_pl_or_peridural is None:
         critical_fields.append("recent_pl_or_peridural")
-    
+
+    # CRITIQUE pour cas chronic : demander si changement récent
+    # Permet de différencier chronic stable (pas d'urgence) vs chronic aggravé (urgence)
+    if (case.profile == "chronic" or case.onset == "chronic") and case.recent_pattern_change is None:
+        critical_fields.append("recent_pattern_change")
+
     return critical_fields

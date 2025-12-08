@@ -117,7 +117,11 @@ class HeadacheCase(BaseModel):
         default=None,
         description="Immunodépression (VIH, chimiothérapie, corticoïdes au long cours)"
     )
-    
+    recent_pattern_change: Optional[bool] = Field(
+        default=None,
+        description="Changement récent du pattern d'une céphalée chronique connue (aggravation, nouveaux symptômes)"
+    )
+
     # Synthèse des red flags
     red_flag_context: list[str] = Field(
         default_factory=list,

@@ -90,7 +90,10 @@ def prioritize_missing_fields(missing_fields: List[str], case: HeadacheCase) -> 
         
         # Profil temporel (aide au diagnostic)
         "profile": 70,
-        
+
+        # Changement de pattern (CRITIQUE pour chronic)
+        "recent_pattern_change": 65,  # Si chronic, demander changement avant autres red flags
+
         # Contextes à risque
         "pregnancy_postpartum": 60,
         "trauma": 55,
@@ -173,6 +176,10 @@ def generate_question_for_field(field_name: str, case: HeadacheCase) -> str:
         "immunosuppression": (
             "Le patient est-il immunodéprimé ? "
             "(VIH, chimiothérapie, traitement immunosuppresseur, greffe)"
+        ),
+        "recent_pattern_change": (
+            "Y a-t-il eu un changement récent dans les céphalées du patient ? "
+            "(aggravation, nouveaux symptômes, intensité différente, pattern inhabituel)"
         ),
         "headache_profile": (
             "Pouvez-vous décrire la douleur du patient ? "
@@ -349,19 +356,48 @@ def should_end_dialogue(case: HeadacheCase, missing_fields: List[str]) -> Tuple[
     if case.htic_pattern is True and case.neuro_deficit is True:
         return True, "emergency_htic"
     
-    # Cas 3: Profil chronic sans red flags -> UNIQUEMENT si tous les red flags sont VÉRIFIÉS (False)
-    # Ne PAS terminer si des red flags sont None (non vérifiés)
-    if case.profile == "chronic":
+    # Cas 3: Profil chronic - Logique différenciée selon changement récent
+    if case.profile == "chronic" or case.onset == "chronic":
+        # Cas 3A: Chronic STABLE (pas de changement récent) -> Pas d'urgence
+        if case.recent_pattern_change is False:
+            # Céphalée chronique stable connue sans changement = PAS D'URGENCE
+            # Pas besoin de vérifier tous les red flags
+            return True, "chronic_stable_no_urgency"
+
+        # Cas 3B: Chronic AGGRAVÉ (changement récent détecté) -> Vérifier red flags
+        if case.recent_pattern_change is True:
+            # Changement récent = nécessite évaluation des red flags
+            # Ne pas terminer tant que les red flags ne sont pas vérifiés
+            red_flag_fields = [
+                case.fever, case.meningeal_signs, case.neuro_deficit,
+                case.seizure, case.htic_pattern, case.trauma
+            ]
+            all_verified = all(flag is not None for flag in red_flag_fields)
+            any_positive = any(flag is True for flag in red_flag_fields)
+
+            # Si aggravé + red flag positif = urgence
+            if any_positive:
+                return True, "chronic_with_new_red_flags"
+
+            # Si tous vérifiés et négatifs = peut terminer
+            if all_verified:
+                return True, "chronic_aggravated_no_red_flags"
+
+        # Cas 3C: Chronic mais changement non encore demandé (None)
+        # Si recent_pattern_change est None, demander d'abord ce champ
+        if case.recent_pattern_change is None:
+            # Ne pas terminer, il faut poser la question du changement
+            return False, "needs_pattern_change_assessment"
+
+        # Cas 3D: Legacy - tous red flags vérifiés négatifs (ancien comportement)
         red_flag_fields = [
             case.fever, case.meningeal_signs, case.neuro_deficit,
             case.seizure, case.htic_pattern, case.trauma
         ]
-        # Vérifier si tous les red flags sont explicitement False (pas None)
         all_verified = all(flag is not None for flag in red_flag_fields)
         any_positive = any(flag is True for flag in red_flag_fields)
-        
-        # Seulement terminer si TOUS sont vérifiés ET aucun n'est positif
-        if all_verified and not any_positive and case.onset != "thunderclap":
+
+        if all_verified and not any_positive:
             return True, "chronic_no_red_flags"
     
     # Sinon, continuer le dialogue
