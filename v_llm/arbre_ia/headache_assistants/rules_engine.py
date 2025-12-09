@@ -337,9 +337,45 @@ def _apply_contextual_adaptations(
     # ========================================================================
     # RÈGLE 2: CONTEXTE ONCOLOGIQUE - Scanner en priorité
     # ========================================================================
-    # TODO: Ajouter champ cancer/oncologique dans HeadacheCase
-    # Si contexte oncologique détecté, privilégier scanner
-    
+    if case.cancer_history is True:
+        # Contexte oncologique: privilégier SCANNER (meilleure détection lésions osseuses/métastases)
+        new_imaging = []
+        scanner_added = False
+
+        for exam in adapted_imaging:
+            if "irm" in exam.lower() and not scanner_added:
+                # Remplacer IRM par Scanner en priorité
+                if recommendation.urgency in ["immediate", "urgent"]:
+                    new_imaging.append("scanner_cerebral_avec_injection")
+                else:
+                    new_imaging.append("scanner_cerebral_avec_injection")
+                scanner_added = True
+            elif "scanner" not in exam.lower():
+                # Garder les autres examens (ponction lombaire, etc.)
+                new_imaging.append(exam)
+            else:
+                # Garder le scanner demandé
+                new_imaging.append(exam)
+                scanner_added = True
+
+        # Si aucune imagerie n'était demandée, ajouter scanner
+        if not new_imaging and recommendation.imaging and "aucun" not in recommendation.imaging:
+            new_imaging.append("scanner_cerebral_avec_injection")
+        elif not scanner_added and new_imaging:
+            new_imaging.insert(0, "scanner_cerebral_avec_injection")
+
+        adapted_imaging = new_imaging if new_imaging else adapted_imaging
+
+        # Ajouter commentaire contexte oncologique
+        adapted_comment = (
+            f"CONTEXTE ONCOLOGIQUE: Scanner en 1ère intention (meilleure détection métastases/lésions osseuses). "
+            f"{adapted_comment}"
+        )
+        precautions.append("CONTEXTE ONCOLOGIQUE CONNU:")
+        precautions.append("- Scanner privilégié pour détection métastases cérébrales")
+        precautions.append("- Injection systématique sauf contre-indication")
+        precautions.append("- Comparaison avec imagerie antérieure si disponible")
+
     # ========================================================================
     # RÈGLE 3: FEMME < 50 ANS - Test grossesse avant scanner
     # ========================================================================

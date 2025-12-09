@@ -122,6 +122,66 @@ class HeadacheCase(BaseModel):
         description="Changement récent du pattern d'une céphalée chronique connue (aggravation, nouveaux symptômes)"
     )
 
+    # PRIORITÉ 1 - Contexte oncologique
+    cancer_history: Optional[bool] = Field(
+        default=None,
+        description="Antécédents oncologiques (cancer actif ou en rémission)"
+    )
+
+    # PRIORITÉ 2 - Questions complémentaires selon client
+    vertigo: Optional[bool] = Field(
+        default=None,
+        description="Présence de vertiges (à considérer comme déficit moteur si présent)"
+    )
+    tinnitus: Optional[bool] = Field(
+        default=None,
+        description="Présence d'acouphènes (à préciser sur ordonnance)"
+    )
+    visual_disturbance_type: Optional[Literal["stroboscopic", "blur", "blindness", "none"]] = Field(
+        default=None,
+        description="Type de troubles visuels: stroboscopique (aura), flou, cécité (=déficit moteur), aucun"
+    )
+    joint_pain: Optional[bool] = Field(
+        default=None,
+        description="Douleurs articulaires (si oui + âge>60, évaluer Horton)"
+    )
+    horton_criteria: Optional[bool] = Field(
+        default=None,
+        description="Arguments pour maladie de Horton (claudication mâchoire, artères temporales, ESR/CRP élevée)"
+    )
+
+    # PRIORITÉ 3 - Historique patient
+    first_episode: Optional[bool] = Field(
+        default=None,
+        description="Premier épisode de céphalée vs céphalées récurrentes connues"
+    )
+    previous_workup: Optional[bool] = Field(
+        default=None,
+        description="Bilan déjà réalisé (imagerie antérieure)"
+    )
+    chronic_or_episodic: Optional[Literal["chronic_constant", "episodic_attacks", "unknown"]] = Field(
+        default=None,
+        description="Céphalées constantes chroniques vs par crises épisodiques"
+    )
+
+    # PRIORITÉ 4 - Localisation et ATCD
+    headache_location: Optional[str] = Field(
+        default=None,
+        description="Localisation de la céphalée (frontale, temporale, occipitale, diffuse, unilatérale, etc.)"
+    )
+    brain_infection_history: Optional[bool] = Field(
+        default=None,
+        description="Antécédents d'infections cérébrales (méningite, encéphalite, abcès)"
+    )
+    congenital_brain_malformation: Optional[bool] = Field(
+        default=None,
+        description="Malformation congénitale cérébrale connue (Chiari, anévrisme familial, etc.)"
+    )
+    persistent_or_resolving: Optional[Literal["persistent", "resolving", "fluctuating", "unknown"]] = Field(
+        default=None,
+        description="Céphalée persistante, résolutive, ou fluctuante"
+    )
+
     # Synthèse des red flags
     red_flag_context: list[str] = Field(
         default_factory=list,
@@ -152,7 +212,7 @@ class HeadacheCase(BaseModel):
     
     def has_red_flags(self) -> bool:
         """Vérifie si le cas présente des signes d'alarme (red flags).
-        
+
         Returns:
             True si au moins un red flag est présent
         """
@@ -165,6 +225,10 @@ class HeadacheCase(BaseModel):
             self.htic_pattern is True,
             self.age > 50 and self.profile == "acute",
             self.immunosuppression is True,
+            self.cancer_history is True,  # Contexte oncologique
+            self.vertigo is True,  # Vertiges = déficit neurologique
+            self.visual_disturbance_type == "blindness",  # Cécité = déficit
+            self.horton_criteria is True,  # Suspicion Horton
             len(self.red_flag_context) > 0
         ]
         return any(red_flags)
