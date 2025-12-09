@@ -117,7 +117,7 @@ def print_case_details(case: HeadacheCase, metadata: Dict[str, Any]):
         # Top matches
         top_matches = metadata.get('enhancement_details', {}).get('top_matches', [])
         if top_matches:
-            print(f"\n   🔍 Exemples similaires utilisés:")
+            print(f"\n    Exemples similaires utilisés:")
             for match in top_matches[:3]:
                 print(f"      • [{match['similarity']:.2f}] {match['text'][:60]}...")
 
@@ -375,7 +375,7 @@ def batch_test_mode(nlu: HybridNLU, test_cases: list):
         print(f"\n{'='*70}")
         print(f"CAS #{i}/{len(test_cases)}")
         print(f"{'='*70}")
-        print(f"📝 Texte: {text}")
+        print(f" Texte: {text}")
 
         start = time.time()
         result = nlu.parse_hybrid(text)
@@ -400,7 +400,7 @@ def batch_test_mode(nlu: HybridNLU, test_cases: list):
     avg_latency = total_latency / len(results)
     embedding_used = sum(1 for r in results if r["metadata"].get("embedding_used"))
 
-    print(f"\n📊 Performance:")
+    print(f"\n Performance:")
     print(f"   • Latence moyenne:       {avg_latency:.1f}ms")
     print(f"   • Latence totale:        {total_latency:.1f}ms")
     print(f"   • Embedding utilisé:     {embedding_used}/{len(results)} cas ({embedding_used/len(results)*100:.0f}%)")
@@ -455,7 +455,7 @@ def main():
         else:
             # Analyser le texte fourni
             text = " ".join(sys.argv[1:])
-            print(f"\n📝 Analyse de: {text}\n")
+            print(f"\n Analyse de: {text}\n")
 
             start = time.time()
             result = nlu.parse_hybrid(text)

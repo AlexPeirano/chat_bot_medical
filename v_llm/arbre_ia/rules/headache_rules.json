@@ -302,17 +302,40 @@
       }
     },
     {
+      "id": "AGE_SUP_50_ACUTE",
+      "name": "Première céphalée après 50 ans",
+      "description": "Céphalée aiguë apparue après 50 ans. Red flag nécessitant imagerie même sans autre signe d'alarme.",
+      "category": "red_flag_age",
+      "logic": "all",
+      "conditions": {
+        "age_min": 50,
+        "profile": "acute"
+      },
+      "recommendation": {
+        "imaging": ["scanner_cerebral_sans_injection"],
+        "urgency": "urgent",
+        "comment": "Première céphalée après 50 ans = red flag. Risque accru de cause secondaire (tumeur, processus expansif, artérite temporale, HSA minime). Scanner cérébral recommandé en urgence pour éliminer cause organique. Si scanner normal et céphalée persiste: IRM + bilan biologique (VS, CRP pour éliminer Horton)."
+      }
+    },
+    {
       "id": "BENIGN_ACUTE_001",
       "name": "Céphalée aiguë bénigne sans red flags",
-      "description": "Céphalée aiguë sans aucun signe d'alarme. Pas d'imagerie nécessaire.",
+      "description": "Céphalée aiguë sans AUCUN signe d'alarme chez patient <50 ans. Pas d'imagerie nécessaire.",
       "category": "benign_primary",
       "logic": "all",
       "conditions": {
         "profile": "acute",
+        "age_max": 49,
         "fever": false,
         "meningeal_signs": false,
         "neuro_deficit": false,
-        "htic_pattern": false
+        "htic_pattern": false,
+        "seizure": false,
+        "trauma": false,
+        "pregnancy_postpartum": false,
+        "immunosuppression": false,
+        "cancer_history": false,
+        "horton_criteria": false
       },
       "recommendation": {
         "imaging": [],
@@ -328,9 +351,7 @@
       "logic": "all",
       "conditions": {
         "age_min": 50,
-        "profile": "subacute",
-        "onset": "progressive",
-        "temporal_artery_signs": true
+        "horton_criteria": true
       },
       "recommendation": {
         "imaging": [

@@ -152,16 +152,13 @@ def match_rule(case: HeadacheCase, rule: Dict[str, Any]) -> bool:
             
             elif isinstance(expected_value, bool):
                 # Comparaison booléenne avec gestion None
-                # Pour les red flags: None est traité comme False (absence de signe)
-                red_flag_fields = ['fever', 'meningeal_signs', 'neuro_deficit', 'htic_pattern', 
-                                   'visual_disturbance', 'consciousness_disorder', 'seizure',
-                                   'trauma', 'pregnancy_postpartum', 'immunosuppression']
-                
-                if key in red_flag_fields and actual_value is None:
-                    # None = absence de signe = False pour les red flags
+                # Pour TOUS les champs booléens: None est traité comme False (absence de signe/information)
+                # Ceci assure que les règles vérifiant "fever: false" matchent quand fever is None
+                if actual_value is None:
+                    # None = absence de signe = False
                     matches.append(expected_value is False)
                 else:
-                    # Comparaison booléenne stricte normale
+                    # Comparaison booléenne stricte
                     matches.append(actual_value is expected_value)
             
             else:
@@ -281,38 +278,75 @@ def _apply_contextual_adaptations(
     contraindications = []
     
     # ========================================================================
-    # RÈGLE 1: GROSSESSE - Gestion selon urgence et trimestre
+    # RÈGLE 1: GROSSESSE / POST-PARTUM - IMAGERIE OBLIGATOIRE
     # ========================================================================
     if case.pregnancy_postpartum is True:
+        # CORRECTION BUG: Grossesse/post-partum = RED FLAG critique
+        # IRM + angio-IRM OBLIGATOIRE même si aucune imagerie initialement prescrite
+        # (risque TVC, PRES, éclampsie, HSA, SVCR)
+
         scanner_found = False
         irm_found = False
         is_hsa_rule = recommendation.applied_rule_id and "HSA" in recommendation.applied_rule_id
         is_immediate_urgency = recommendation.urgency == "immediate"
         new_imaging = []
-        
-        for exam in adapted_imaging:
-            if "scanner" in exam.lower():
-                scanner_found = True
-                # HSA et autres urgences vitales : scanner PRIORITAIRE malgré grossesse
-                if is_hsa_rule or is_immediate_urgency:
-                    # Garder scanner mais remplacer par IRM comme alternative
-                    new_imaging.append(exam)
-                    if "irm_cerebrale" not in new_imaging and "IRM_cerebrale" not in new_imaging:
-                        new_imaging.append("irm_cerebrale")
-                else:
-                    # Contexte non urgent : privilégier IRM
-                    if "injection" in exam.lower() and "sans" not in exam.lower():
-                        new_imaging.append("IRM_cerebrale_avec_gadolinium")
+
+        # Si aucune imagerie prescrite initialement, FORCER IRM + angio-IRM
+        if not adapted_imaging or len(adapted_imaging) == 0:
+            new_imaging = ["irm_cerebrale", "angio_irm_veineuse"]
+            irm_found = True
+            # Forcer urgence à "urgent" si c'était "none"
+            if recommendation.urgency == "none":
+                recommendation = recommendation.model_copy(update={"urgency": "urgent"})
+            # Ajouter commentaire étiologies
+            adapted_comment = (
+                "Céphalée grossesse/post-partum = red flag. "
+                "Étiologies: TVC, PRES, éclampsie, HSA, SVCR, dissection, méningite. "
+                "IRM + angio-IRM veineuse (pas de scanner sauf urgence vitale). " +
+                adapted_comment
+            )
+        else:
+            # Imagerie déjà prescrite: adapter selon urgence
+            for exam in adapted_imaging:
+                if "scanner" in exam.lower():
+                    scanner_found = True
+                    # HSA et autres urgences vitales : scanner PRIORITAIRE malgré grossesse
+                    if is_hsa_rule or is_immediate_urgency:
+                        # Garder scanner mais ajouter IRM comme alternative
+                        new_imaging.append(exam)
+                        if "irm_cerebrale" not in new_imaging and "IRM_cerebrale" not in new_imaging:
+                            new_imaging.append("irm_cerebrale")
                     else:
-                        new_imaging.append("irm_cerebrale")
-            elif "irm" in exam.lower():
-                irm_found = True
-                new_imaging.append(exam)
-            else:
-                new_imaging.append(exam)
-        
+                        # Contexte non urgent : privilégier IRM
+                        if "injection" in exam.lower() and "sans" not in exam.lower():
+                            new_imaging.append("IRM_cerebrale_avec_gadolinium")
+                        else:
+                            new_imaging.append("irm_cerebrale")
+                elif "irm" in exam.lower():
+                    irm_found = True
+                    new_imaging.append(exam)
+                else:
+                    new_imaging.append(exam)
+
+            # TOUJOURS ajouter angio-IRM veineuse pour grossesse (recherche TVC)
+            if "angio_irm_veineuse" not in new_imaging and "angio-irm_veineuse" not in new_imaging:
+                new_imaging.append("angio_irm_veineuse")
+
+            # Forcer urgence minimale à "urgent" pour grossesse si ce n'était pas déjà immédiat
+            if recommendation.urgency not in ["immediate", "urgent"]:
+                recommendation = recommendation.model_copy(update={"urgency": "urgent"})
+
+            # Ajouter commentaire étiologies si pas déjà présent
+            if "TVC" not in adapted_comment and "thrombose" not in adapted_comment.lower():
+                adapted_comment = (
+                    "Céphalée grossesse/post-partum = red flag. "
+                    "Étiologies: TVC, PRES, éclampsie, HSA, SVCR, dissection, méningite. "
+                    "IRM + angio-IRM veineuse obligatoire. " +
+                    adapted_comment
+                )
+
         adapted_imaging = new_imaging
-        
+
         # Ajouter précautions grossesse adaptées à l'urgence
         precautions.append("PATIENTE ENCEINTE:")
         if scanner_found:
@@ -324,7 +358,7 @@ def _apply_contextual_adaptations(
             else:
                 precautions.append("- Scanner remplacé par IRM (éviter radiations)")
                 contraindications.append("- Scanner contre-indiqué sauf urgence vitale")
-        if irm_found:
+        if irm_found or len(new_imaging) > 0:
             # IRM acceptable dès 2e trimestre (13 sem), en urgence acceptable dès 1er trimestre
             if is_immediate_urgency or recommendation.urgency == "urgent":
                 precautions.append("- IRM acceptable en urgence (risque TVC > risque IRM)")
@@ -338,39 +372,52 @@ def _apply_contextual_adaptations(
     # RÈGLE 2: CONTEXTE ONCOLOGIQUE - Scanner en priorité
     # ========================================================================
     if case.cancer_history is True:
-        # Contexte oncologique: privilégier SCANNER (meilleure détection lésions osseuses/métastases)
-        new_imaging = []
-        scanner_added = False
+        # CORRECTION BUG: Contexte oncologique = RED FLAG
+        # Scanner OBLIGATOIRE même si aucune imagerie initialement prescrite
 
-        for exam in adapted_imaging:
-            if "irm" in exam.lower() and not scanner_added:
-                # Remplacer IRM par Scanner en priorité
-                if recommendation.urgency in ["immediate", "urgent"]:
+        # Si aucune imagerie prescrite initialement, FORCER scanner
+        if not adapted_imaging or len(adapted_imaging) == 0:
+            new_imaging = ["scanner_cerebral_avec_injection"]
+            # Forcer urgence minimale à "delayed" si c'était "none"
+            if recommendation.urgency == "none":
+                recommendation = recommendation.model_copy(update={"urgency": "delayed"})
+            # Ajouter commentaire étiologies
+            adapted_comment = (
+                "Contexte oncologique = red flag. "
+                "Risque métastases cérébrales. "
+                "Scanner avec injection obligatoire. " +
+                adapted_comment
+            )
+        else:
+            # Imagerie déjà prescrite: privilégier SCANNER (meilleure détection lésions osseuses/métastases)
+            new_imaging = []
+            scanner_added = False
+
+            for exam in adapted_imaging:
+                if "irm" in exam.lower() and not scanner_added:
+                    # Remplacer IRM par Scanner en priorité
                     new_imaging.append("scanner_cerebral_avec_injection")
+                    scanner_added = True
+                elif "scanner" not in exam.lower():
+                    # Garder les autres examens (ponction lombaire, etc.)
+                    new_imaging.append(exam)
                 else:
-                    new_imaging.append("scanner_cerebral_avec_injection")
-                scanner_added = True
-            elif "scanner" not in exam.lower():
-                # Garder les autres examens (ponction lombaire, etc.)
-                new_imaging.append(exam)
-            else:
-                # Garder le scanner demandé
-                new_imaging.append(exam)
-                scanner_added = True
+                    # Garder le scanner demandé
+                    new_imaging.append(exam)
+                    scanner_added = True
 
-        # Si aucune imagerie n'était demandée, ajouter scanner
-        if not new_imaging and recommendation.imaging and "aucun" not in recommendation.imaging:
-            new_imaging.append("scanner_cerebral_avec_injection")
-        elif not scanner_added and new_imaging:
-            new_imaging.insert(0, "scanner_cerebral_avec_injection")
+            # Si scanner pas encore ajouté, l'ajouter en premier
+            if not scanner_added and new_imaging:
+                new_imaging.insert(0, "scanner_cerebral_avec_injection")
 
-        adapted_imaging = new_imaging if new_imaging else adapted_imaging
+            adapted_comment = (
+                "CONTEXTE ONCOLOGIQUE: Scanner en 1ère intention (meilleure détection métastases/lésions osseuses). "
+                f"{adapted_comment}"
+            )
 
-        # Ajouter commentaire contexte oncologique
-        adapted_comment = (
-            f"CONTEXTE ONCOLOGIQUE: Scanner en 1ère intention (meilleure détection métastases/lésions osseuses). "
-            f"{adapted_comment}"
-        )
+        adapted_imaging = new_imaging
+
+        # Ajouter précautions oncologie
         precautions.append("CONTEXTE ONCOLOGIQUE CONNU:")
         precautions.append("- Scanner privilégié pour détection métastases cérébrales")
         precautions.append("- Injection systématique sauf contre-indication")
@@ -440,29 +487,45 @@ def _apply_contextual_adaptations(
 
 def _get_fallback_recommendation(case: HeadacheCase) -> ImagingRecommendation:
     """Génère une recommandation fallback si aucune règle ne correspond.
-    
-    Stratégie fallback basée sur le profil:
-    - Aigu : Scanner cérébral en urgence (éliminer cause secondaire)
-    - Subaïgu : Scanner ou IRM en semi-urgence
-    - Chronique : Pas d'imagerie systématique (consulter neurologue)
-    
+
+    Stratégie fallback ROBUSTE basée sur:
+    1. Présence de red flags (priorité absolue)
+    2. Profil temporel
+    3. Âge du patient
+
     Args:
         case: Cas de céphalée
-        
+
     Returns:
-        ImagingRecommendation fallback adaptée au profil
+        ImagingRecommendation fallback adaptée au cas
     """
-    if case.profile == "acute":
-        # Céphalée aiguë sans règle spécifique : bilan étiologique
+    # PRIORITÉ 1: Si red flags présents, TOUJOURS prescrire imagerie
+    if case.has_red_flags():
         return ImagingRecommendation(
             imaging=["scanner_cerebral_sans_injection"],
             urgency="urgent",
             comment=(
-                "Céphalée aiguë inhabituelle sans correspondance règle spécifique. "
-                "Scanner cérébral recommandé pour éliminer cause secondaire grave "
-                "(HSA, méningite, processus expansif). Examen neurologique complet requis."
+                "Red flags détectés. Bilan urgent nécessaire même si contexte chronique. "
+                "Red flags principaux: début >50 ans, modification récente céphalée habituelle, "
+                "fièvre, immunodépression, cancer, traumatisme, grossesse/post-partum, "
+                "signes neurologiques focaux. Scanner ou IRM selon contexte."
             ),
-            applied_rule_id="FALLBACK_ACUTE"
+            applied_rule_id="FALLBACK_RED_FLAGS"
+        )
+
+    # PRIORITÉ 2: Profil acute sans red flags
+    if case.profile == "acute":
+        # Céphalée aiguë sans règle spécifique ET sans red flags
+        # → Probablement céphalée primaire bénigne
+        return ImagingRecommendation(
+            imaging=[],
+            urgency="none",
+            comment=(
+                "Céphalée aiguë bénigne probable (migraine ou céphalée de tension). "
+                "Aucun red flag détecté. Traitement symptomatique. "
+                "Consultation si persistance >72h ou apparition de signes d'alarme."
+            ),
+            applied_rule_id="FALLBACK_ACUTE_BENIGN"
         )
     
     elif case.profile == "subacute":

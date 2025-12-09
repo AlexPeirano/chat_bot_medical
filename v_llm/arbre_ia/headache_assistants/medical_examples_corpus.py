@@ -155,11 +155,11 @@ MEDICAL_EXAMPLES: List[Dict[str, Any]] = [
     # HTIC - Hypertension IntraCrânienne
     # ========================================================================
     {
-        "text": "Céphalée pire le matin au réveil avec vomissements",
+        "text": "Céphalée avec vomissements en jet et aggravation par la toux",
         "htic_pattern": True,
         "annotations": {
-            "source": "HTIC classique",
-            "keywords": ["pire le matin", "vomissements"]
+            "source": "HTIC classique - signes FORTS",
+            "keywords": ["vomissements en jet", "aggravation", "toux"]
         }
     },
     {

@@ -956,11 +956,13 @@ def parse_free_text_to_case(text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
             confidence_scores["age"] = 0.9  # Haute confiance pour pattern numérique
         else:
             # Âge aberrant détecté mais rejeté
-            extracted_data["age"] = 50  # Valeur par défaut
+            # IMPORTANT: 35 ans évite faux positif règle AGE_SUP_50 (age_min=50)
+            extracted_data["age"] = 35  # Valeur par défaut: milieu tranche adulte
             confidence_scores["age"] = 0.0  # Aucune confiance
     else:
         # Valeur par défaut si non détecté
-        extracted_data["age"] = 50  # Âge moyen par défaut
+        # IMPORTANT: 35 ans évite faux positif règle AGE_SUP_50 (age_min=50)
+        extracted_data["age"] = 35  # Milieu tranche adulte (18-65)
         confidence_scores["age"] = 0.1  # Très faible confiance
     
     if sex is not None:
@@ -1194,8 +1196,10 @@ def parse_free_text_to_case(text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
         case = HeadacheCase(**extracted_data)
     except Exception as e:
         # En cas d'erreur de validation, créer un cas minimal valide
+        # Âge par défaut: 35 ans (milieu de tranche adulte 18-65)
+        # IMPORTANT: Évite faux positif règle AGE_SUP_50 qui nécessite age≥50
         case = HeadacheCase(
-            age=extracted_data.get("age", 50),
+            age=extracted_data.get("age", 35),
             sex=extracted_data.get("sex", "Other")
         )
         confidence_scores["validation_error"] = str(e)

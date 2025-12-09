@@ -193,7 +193,8 @@ class MedicalVocabulary:
                 "canonical": ["hypertension intracrânienne", "HTIC"],
                 "acronyms": ["htic", "sdm htic", "signes htic", "signes d'htic"],
                 "clinical_patterns": [
-                    "céphalée matutinale", "céphalée du matin", "céphalée le matin",
+                    # RETIRÉS: "céphalée matutinale", "céphalée du matin", "céphalée le matin"
+                    # → Signes FAIBLES, peuvent être migraine/tension, pas spécifique HTIC
                     "vomissements en jet", "vom en jet", "vomissement en jet",
                     "aggravation par la toux", "aggravation par l'effort",
                     "aggravée par la toux", "aggravée par l'effort",
@@ -208,11 +209,9 @@ class MedicalVocabulary:
                     "œdème papillaire", "oedème papillaire", "op++", "op+",
                     "flou visuel", "éclipses visuelles", "éclipse visuelle"
                 ],
-                "temporal_phrases": [
-                    "plus forte le matin", "pire le matin",
-                    "aggravée le matin", "aggravée au matin",
-                    "aggravée au réveil", "douleur matutinale"
-                ],
+                # SUPPRIMÉ: temporal_phrases (signes trop faibles)
+                # "plus forte le matin", "pire le matin" peuvent être migraine/tension
+                # HTIC nécessite signes FORTS: vomissements en jet OU œdème papillaire
                 "confidence": 0.90,
                 # Anti-patterns: termes qui ressemblent mais ne sont PAS HTIC
                 "exclusions": ["scotomes", "scotome", "aura"]  # Aura migraineuse ≠ HTIC
@@ -425,6 +424,257 @@ class MedicalVocabulary:
                 ],
                 "bio_markers": ["cd4"],
                 "confidence": 0.90
+            }
+        }
+
+        # ====================================================================
+        # CONTEXTE ONCOLOGIQUE (PRIORITÉ 1 - impact décision scanner/IRM)
+        # ====================================================================
+        self.cancer_history_vocabulary = {
+            True: {
+                "canonical": [
+                    "cancer", "antécédent cancer", "atcd cancer",
+                    "histoire de cancer", "antécédent de cancer"
+                ],
+                "medical_terms": [
+                    "néoplasie", "tumeur maligne", "carcinome",
+                    "adénocarcinome", "épithélioma", "sarcome"
+                ],
+                "contexts": [
+                    "oncologique", "contexte oncologique", "suivi oncologique",
+                    "en rémission", "rémission complète"
+                ],
+                "treatments": [
+                    "chimio", "chimiothérapie", "sous chimiothérapie",
+                    "radiothérapie", "radiothérapie", "immunothérapie",
+                    "hormonothérapie"
+                ],
+                "specific_cancers": [
+                    "cancer poumon", "cancer du poumon", "k poumon",
+                    "cancer sein", "cancer du sein", "k sein",
+                    "cancer colon", "cancer colorectal", "k colon",
+                    "cancer prostate", "k prostate",
+                    "cancer ovaire", "k ovaire",
+                    "leucémie", "lymphome", "myélome"
+                ],
+                "metastasis": [
+                    "métastase", "métastases", "métastatique",
+                    "métastase cérébrale", "métastases cérébrales",
+                    "localisation secondaire", "envahissement"
+                ],
+                "temporal_context": [
+                    "traité pour", "traité il y a", "opéré pour",
+                    "sous traitement pour", "en cours de traitement",
+                    "antécédent de", "atcd de"
+                ],
+                "confidence": 0.95  # Haute confiance car contexte critique
+            },
+            False: {
+                "canonical": ["pas de cancer", "sans cancer", "sans atcd cancer"],
+                "synonyms": [
+                    "aucun cancer", "pas d'antécédent cancer",
+                    "sans antécédent oncologique", "nie cancer"
+                ],
+                "confidence": 0.85
+            }
+        }
+
+        # ====================================================================
+        # VERTIGES (PRIORITÉ 2)
+        # ====================================================================
+        self.vertigo_vocabulary = {
+            True: {
+                "canonical": ["vertige", "vertiges"],
+                "medical_terms": [
+                    "syndrome vestibulaire", "vertige positionnel",
+                    "vertige rotatoire", "vertige central", "vertige périphérique"
+                ],
+                "patient_language": [
+                    "tournement", "tournoiement", "tourne",
+                    "la pièce qui tourne", "tout tourne", "ça tourne",
+                    "impression de tourner", "sensation de tourner"
+                ],
+                "generic_terms": [
+                    "instabilité", "instable", "déséquilibre",
+                    "perte d'équilibre", "mal à tenir debout"
+                ],
+                "confidence": 0.85
+            },
+            False: {
+                "canonical": ["pas de vertige", "sans vertige"],
+                "synonyms": ["aucun vertige", "nie vertige", "pas de déséquilibre"],
+                "confidence": 0.80
+            }
+        }
+
+        # ====================================================================
+        # ACOUPHÈNES (PRIORITÉ 2)
+        # ====================================================================
+        self.tinnitus_vocabulary = {
+            True: {
+                "canonical": ["acouphène", "acouphènes", "tinnitus"],
+                "patient_language": [
+                    "sifflement", "sifflements", "siffle dans l'oreille",
+                    "bourdonnement", "bourdonnements", "bourdonne",
+                    "bruit dans l'oreille", "bruit dans les oreilles",
+                    "entend des bruits", "entend un bruit",
+                    "oreille qui siffle", "oreilles qui sifflent"
+                ],
+                "medical_terms": [
+                    "acouphène pulsatile", "acouphènes bilatéraux",
+                    "acouphène unilatéral"
+                ],
+                "confidence": 0.85
+            },
+            False: {
+                "canonical": ["pas d'acouphène", "sans acouphène"],
+                "synonyms": ["aucun acouphène", "nie acouphène", "pas de tinnitus"],
+                "confidence": 0.80
+            }
+        }
+
+        # ====================================================================
+        # TROUBLES VISUELS - TYPE (PRIORITÉ 2)
+        # ====================================================================
+        self.visual_disturbance_vocabulary = {
+            "stroboscopic": {
+                "canonical": ["scotome scintillant", "aura visuelle"],
+                "medical_terms": [
+                    "spectre de fortification", "phosphènes",
+                    "points lumineux", "éclairs lumineux",
+                    "tâches lumineuses", "zigzags lumineux"
+                ],
+                "patient_language": [
+                    "voit des éclairs", "voit des points brillants",
+                    "comme des flashs", "lumières qui clignotent",
+                    "scintillement", "ça clignote"
+                ],
+                "confidence": 0.85
+            },
+            "blur": {
+                "canonical": ["vision floue", "flou visuel"],
+                "patient_language": [
+                    "voit flou", "voit trouble", "vision trouble",
+                    "ne voit pas net", "vision pas nette"
+                ],
+                "confidence": 0.80
+            },
+            "blindness": {
+                "canonical": ["cécité", "perte de vision", "amaurose"],
+                "medical_terms": [
+                    "cécité monoculaire", "amaurose fugace",
+                    "perte de vision brutale"
+                ],
+                "patient_language": [
+                    "ne voit plus", "ne voit rien", "tout noir",
+                    "a perdu la vue", "vision disparue"
+                ],
+                "confidence": 0.90
+            },
+            "none": {
+                "canonical": ["pas de troubles visuels", "sans troubles visuels"],
+                "synonyms": ["vision normale", "voit bien", "pas de problème visuel"],
+                "confidence": 0.75
+            }
+        }
+
+        # ====================================================================
+        # DOULEURS ARTICULAIRES (PRIORITÉ 2 - lié Horton)
+        # ====================================================================
+        self.joint_pain_vocabulary = {
+            True: {
+                "canonical": ["douleurs articulaires", "douleur articulaire"],
+                "medical_terms": [
+                    "arthralgies", "arthralgie", "polyarthralgies",
+                    "rhumatisme", "douleurs rhumatismales"
+                ],
+                "patient_language": [
+                    "mal aux articulations", "articulations douloureuses",
+                    "douleurs dans les articulations"
+                ],
+                "confidence": 0.80
+            },
+            False: {
+                "canonical": ["pas de douleurs articulaires", "sans arthralgies"],
+                "synonyms": ["aucune arthralgie", "pas d'arthralgie"],
+                "confidence": 0.75
+            }
+        }
+
+        # ====================================================================
+        # CRITÈRES HORTON / ARTÉRITE TEMPORALE (PRIORITÉ 2)
+        # ====================================================================
+        self.horton_criteria_vocabulary = {
+            True: {
+                "canonical": ["maladie de Horton", "Horton", "artérite temporale"],
+                "clinical_signs": [
+                    "claudication mâchoire", "claudication de la mâchoire",
+                    "claudication mandibulaire",
+                    "douleur à la mastication", "douleur en mâchant",
+                    "mal quand il mâche", "mal quand elle mâche"
+                ],
+                "vascular_signs": [
+                    "artère temporale", "artères temporales",
+                    "artère temporale indurée", "artère temporale sensible",
+                    "artère temporale douloureuse",
+                    "pouls temporal aboli", "pouls temporal absent"
+                ],
+                "systemic_symptoms": [
+                    "pseudopolyarthrite rhizomélique", "PPR",
+                    "altération état général", "aeg", "amaigrissement",
+                    "fièvre prolongée", "sueurs nocturnes"
+                ],
+                "lab_markers": [
+                    "VS élevée", "VS augmentée", "CRP élevée", "CRP augmentée",
+                    "syndrome inflammatoire"
+                ],
+                "confidence": 0.90
+            },
+            False: {
+                "canonical": ["pas de signe Horton", "Horton écarté"],
+                "synonyms": ["pas d'artérite temporale", "sans Horton"],
+                "confidence": 0.80
+            }
+        }
+
+        # ====================================================================
+        # LOCALISATION CÉPHALÉE (PRIORITÉ 4)
+        # ====================================================================
+        self.headache_location_vocabulary = {
+            "frontal": {
+                "canonical": ["frontale", "frontal"],
+                "patient_language": ["front", "au front", "sur le front"],
+                "confidence": 0.80
+            },
+            "temporal": {
+                "canonical": ["temporale", "temporal"],
+                "patient_language": ["tempe", "tempes", "sur la tempe", "aux tempes"],
+                "confidence": 0.80
+            },
+            "occipital": {
+                "canonical": ["occipitale", "occipital"],
+                "patient_language": [
+                    "arrière", "derrière", "nuque",
+                    "arrière de la tête", "derrière la tête"
+                ],
+                "confidence": 0.80
+            },
+            "unilateral": {
+                "canonical": ["unilatérale", "unilatéral", "hémicrânie"],
+                "patient_language": [
+                    "d'un côté", "d'un seul côté",
+                    "côté droit", "côté gauche", "à droite", "à gauche",
+                    "moitié droite", "moitié gauche"
+                ],
+                "confidence": 0.85
+            },
+            "diffuse": {
+                "canonical": ["diffuse", "diffus", "généralisée"],
+                "patient_language": [
+                    "partout", "toute la tête", "toute la tête",
+                    "dans toute la tête"
+                ],
+                "confidence": 0.75
             }
         }
 
@@ -1108,22 +1358,17 @@ class MedicalVocabulary:
                     source="acronym"
                 )
 
-        # Patterns cliniques - Distinguer signes forts vs faibles
+        # Patterns cliniques - SEULEMENT signes FORTS (vomissements en jet, aggravation toux/effort)
+        # Les signes faibles (céphalée matutinale, pire le matin) ont été retirés du vocabulaire
         for pattern in vocab_true.get("clinical_patterns", []):
             if self.normalize_text(pattern) in text_norm:
-                # Vomissements en jet = SIGNE FORT HTIC (haute confiance)
-                pattern_norm = self.normalize_text(pattern)
-                is_strong_sign = any(term in pattern_norm
-                                    for term in ["vomissement en jet", "vomissements en jet", "vom en jet", "cephalee matutinale"])
-                confidence = vocab_true["confidence"] if is_strong_sign else vocab_true["confidence"] * 0.60
-
                 return DetectionResult(
                     detected=True,
                     value=True,
-                    confidence=confidence,
+                    confidence=vocab_true["confidence"],
                     matched_term=pattern,
                     canonical_form="HTIC",
-                    source="clinical_pattern_strong" if is_strong_sign else "clinical_pattern_weak"
+                    source="clinical_pattern"
                 )
 
         # Signes ophtalmologiques
@@ -1138,19 +1383,11 @@ class MedicalVocabulary:
                     source="ophtalmo_sign"
                 )
 
-        # Phrases temporelles - CONFIANCE BASSE car insuffisant seul pour HTIC
+        # Phrases temporelles - SUPPRIMÉES DE LA DÉTECTION
         # "pire le matin" seul n'est PAS HTIC (peut être migraine, céphalée tension)
-        # HTIC nécessite: céphalée matutinale + vomissements en jet OU œdème papillaire
-        for phrase in vocab_true.get("temporal_phrases", []):
-            if self.normalize_text(phrase) in text_norm:
-                return DetectionResult(
-                    detected=True,
-                    value=True,
-                    confidence=vocab_true["confidence"] * 0.50,  # Réduit de 0.90 à 0.50
-                    matched_term=phrase,
-                    canonical_form="HTIC",
-                    source="temporal_weak"  # Marqué comme faible
-                )
+        # HTIC nécessite: vomissements en jet OU œdème papillaire OU mention explicite "HTIC"
+        # Les phrases temporelles seules NE DOIVENT PAS détecter HTIC
+        # (Cette section est intentionnellement vide pour éviter faux positifs)
 
         # Termes canoniques
         for term in vocab_true.get("canonical", []):
@@ -1767,6 +2004,513 @@ class MedicalVocabulary:
                 matched_term=", ".join(profile_data["matched_terms"][:3]),  # Max 3 termes
                 canonical_form=profile_name.replace("_", " "),
                 source="headache_characteristics"
+            )
+
+        return DetectionResult(detected=False, value=None, confidence=0.0)
+
+    def detect_cancer_history(self, text: str) -> DetectionResult:
+        """Détecte le contexte oncologique (cancer actuel ou antécédent).
+
+        Args:
+            text: Texte médical
+
+        Returns:
+            DetectionResult avec cancer_history True/False/None
+        """
+        text_norm = self.normalize_text(text)
+
+        # Négations
+        vocab_false = self.cancer_history_vocabulary[False]
+        for term in vocab_false.get("canonical", []) + vocab_false.get("synonyms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=False,
+                    confidence=vocab_false["confidence"],
+                    matched_term=term,
+                    canonical_form="sans cancer",
+                    source="negation"
+                )
+
+        vocab_true = self.cancer_history_vocabulary[True]
+
+        # Métastases (haute priorité - contexte critique)
+        for term in vocab_true.get("metastasis", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=term,
+                    canonical_form="cancer",
+                    source="metastasis"
+                )
+
+        # Cancers spécifiques (haute confiance)
+        for cancer in vocab_true.get("specific_cancers", []):
+            if self.normalize_text(cancer) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=cancer,
+                    canonical_form="cancer",
+                    source="specific_cancer"
+                )
+
+        # Traitements oncologiques (chimio, radio, etc.)
+        for treatment in vocab_true.get("treatments", []):
+            if self.normalize_text(treatment) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.95,
+                    matched_term=treatment,
+                    canonical_form="cancer",
+                    source="oncology_treatment"
+                )
+
+        # Contextes oncologiques
+        for context in vocab_true.get("contexts", []):
+            if self.normalize_text(context) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.90,
+                    matched_term=context,
+                    canonical_form="cancer",
+                    source="oncology_context"
+                )
+
+        # Termes médicaux
+        for term in vocab_true.get("medical_terms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.95,
+                    matched_term=term,
+                    canonical_form="cancer",
+                    source="medical_term"
+                )
+
+        # Contexte temporel combiné avec d'autres termes
+        for context in vocab_true.get("temporal_context", []):
+            if self.normalize_text(context) in text_norm:
+                # Rechercher si accompagné de "cancer" ou termes liés
+                if any(self.normalize_text(t) in text_norm
+                       for t in ["cancer", "tumeur", "chimio", "oncologique"]):
+                    return DetectionResult(
+                        detected=True,
+                        value=True,
+                        confidence=vocab_true["confidence"],
+                        matched_term=context,
+                        canonical_form="cancer",
+                        source="temporal_context"
+                    )
+
+        # Termes canoniques
+        for term in vocab_true.get("canonical", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=term,
+                    canonical_form="cancer",
+                    source="canonical"
+                )
+
+        return DetectionResult(detected=False, value=None, confidence=0.0)
+
+    def detect_vertigo(self, text: str) -> DetectionResult:
+        """Détecte les vertiges.
+
+        Args:
+            text: Texte médical
+
+        Returns:
+            DetectionResult avec vertigo True/False/None
+        """
+        text_norm = self.normalize_text(text)
+
+        # Négations
+        vocab_false = self.vertigo_vocabulary[False]
+        for term in vocab_false.get("canonical", []) + vocab_false.get("synonyms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=False,
+                    confidence=vocab_false["confidence"],
+                    matched_term=term,
+                    canonical_form="sans vertige",
+                    source="negation"
+                )
+
+        vocab_true = self.vertigo_vocabulary[True]
+
+        # Termes médicaux (haute confiance)
+        for term in vocab_true.get("medical_terms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=term,
+                    canonical_form="vertige",
+                    source="medical_term"
+                )
+
+        # Canoniques
+        for term in vocab_true.get("canonical", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=term,
+                    canonical_form="vertige",
+                    source="canonical"
+                )
+
+        # Langage patient
+        for phrase in vocab_true.get("patient_language", []):
+            if self.normalize_text(phrase) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.90,
+                    matched_term=phrase,
+                    canonical_form="vertige",
+                    source="patient_language"
+                )
+
+        # Termes génériques (plus faible confiance)
+        for term in vocab_true.get("generic_terms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.75,
+                    matched_term=term,
+                    canonical_form="vertige",
+                    source="generic"
+                )
+
+        return DetectionResult(detected=False, value=None, confidence=0.0)
+
+    def detect_tinnitus(self, text: str) -> DetectionResult:
+        """Détecte les acouphènes.
+
+        Args:
+            text: Texte médical
+
+        Returns:
+            DetectionResult avec tinnitus True/False/None
+        """
+        text_norm = self.normalize_text(text)
+
+        # Négations
+        vocab_false = self.tinnitus_vocabulary[False]
+        for term in vocab_false.get("canonical", []) + vocab_false.get("synonyms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=False,
+                    confidence=vocab_false["confidence"],
+                    matched_term=term,
+                    canonical_form="sans acouphène",
+                    source="negation"
+                )
+
+        vocab_true = self.tinnitus_vocabulary[True]
+
+        # Termes médicaux
+        for term in vocab_true.get("medical_terms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=term,
+                    canonical_form="acouphène",
+                    source="medical_term"
+                )
+
+        # Canoniques
+        for term in vocab_true.get("canonical", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=term,
+                    canonical_form="acouphène",
+                    source="canonical"
+                )
+
+        # Langage patient
+        for phrase in vocab_true.get("patient_language", []):
+            if self.normalize_text(phrase) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.90,
+                    matched_term=phrase,
+                    canonical_form="acouphène",
+                    source="patient_language"
+                )
+
+        return DetectionResult(detected=False, value=None, confidence=0.0)
+
+    def detect_visual_disturbance_type(self, text: str) -> DetectionResult:
+        """Détecte le type de troubles visuels.
+
+        Args:
+            text: Texte médical
+
+        Returns:
+            DetectionResult avec visual_disturbance_type (stroboscopic/blur/blindness/none)
+        """
+        text_norm = self.normalize_text(text)
+
+        # Compter les matches pour chaque type
+        type_scores = {}
+
+        for disturbance_type, vocab in self.visual_disturbance_vocabulary.items():
+            score = 0
+            matched_terms = []
+
+            # Vérifier chaque catégorie de termes
+            for category in ["canonical", "medical_terms", "patient_language", "synonyms"]:
+                terms = vocab.get(category, [])
+                for term in terms:
+                    if self.normalize_text(term) in text_norm:
+                        score += 1
+                        matched_terms.append(term)
+
+            if score > 0:
+                type_scores[disturbance_type] = {
+                    "score": score,
+                    "matched_terms": matched_terms,
+                    "confidence": vocab["confidence"]
+                }
+
+        # Retourner le type avec le score le plus élevé
+        if type_scores:
+            best_type = max(type_scores.items(), key=lambda x: x[1]["score"])
+            type_name = best_type[0]
+            type_data = best_type[1]
+
+            return DetectionResult(
+                detected=True,
+                value=type_name,
+                confidence=type_data["confidence"],
+                matched_term=type_data["matched_terms"][0] if type_data["matched_terms"] else "",
+                canonical_form=type_name,
+                source="visual_disturbance"
+            )
+
+        return DetectionResult(detected=False, value=None, confidence=0.0)
+
+    def detect_joint_pain(self, text: str) -> DetectionResult:
+        """Détecte les douleurs articulaires.
+
+        Args:
+            text: Texte médical
+
+        Returns:
+            DetectionResult avec joint_pain True/False/None
+        """
+        text_norm = self.normalize_text(text)
+
+        # Négations
+        vocab_false = self.joint_pain_vocabulary[False]
+        for term in vocab_false.get("canonical", []) + vocab_false.get("synonyms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=False,
+                    confidence=vocab_false["confidence"],
+                    matched_term=term,
+                    canonical_form="sans douleurs articulaires",
+                    source="negation"
+                )
+
+        vocab_true = self.joint_pain_vocabulary[True]
+
+        # Termes médicaux
+        for term in vocab_true.get("medical_terms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=term,
+                    canonical_form="douleurs articulaires",
+                    source="medical_term"
+                )
+
+        # Canoniques
+        for term in vocab_true.get("canonical", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=term,
+                    canonical_form="douleurs articulaires",
+                    source="canonical"
+                )
+
+        # Langage patient
+        for phrase in vocab_true.get("patient_language", []):
+            if self.normalize_text(phrase) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.85,
+                    matched_term=phrase,
+                    canonical_form="douleurs articulaires",
+                    source="patient_language"
+                )
+
+        return DetectionResult(detected=False, value=None, confidence=0.0)
+
+    def detect_horton_criteria(self, text: str) -> DetectionResult:
+        """Détecte les critères de maladie de Horton / artérite temporale.
+
+        Args:
+            text: Texte médical
+
+        Returns:
+            DetectionResult avec horton_criteria True/False/None
+        """
+        text_norm = self.normalize_text(text)
+
+        # Négations
+        vocab_false = self.horton_criteria_vocabulary[False]
+        for term in vocab_false.get("canonical", []) + vocab_false.get("synonyms", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=False,
+                    confidence=vocab_false["confidence"],
+                    matched_term=term,
+                    canonical_form="pas de Horton",
+                    source="negation"
+                )
+
+        vocab_true = self.horton_criteria_vocabulary[True]
+
+        # Canoniques (diagnostic posé)
+        for term in vocab_true.get("canonical", []):
+            if self.normalize_text(term) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=term,
+                    canonical_form="Horton",
+                    source="canonical"
+                )
+
+        # Signes cliniques (claudication mâchoire - très évocateur)
+        for sign in vocab_true.get("clinical_signs", []):
+            if self.normalize_text(sign) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"],
+                    matched_term=sign,
+                    canonical_form="Horton",
+                    source="clinical_sign"
+                )
+
+        # Signes vasculaires
+        for sign in vocab_true.get("vascular_signs", []):
+            if self.normalize_text(sign) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.95,
+                    matched_term=sign,
+                    canonical_form="Horton",
+                    source="vascular_sign"
+                )
+
+        # Symptômes systémiques (plus faible confiance seuls)
+        for symptom in vocab_true.get("systemic_symptoms", []):
+            if self.normalize_text(symptom) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.75,
+                    matched_term=symptom,
+                    canonical_form="Horton",
+                    source="systemic"
+                )
+
+        # Marqueurs biologiques (plus faible confiance seuls)
+        for marker in vocab_true.get("lab_markers", []):
+            if self.normalize_text(marker) in text_norm:
+                return DetectionResult(
+                    detected=True,
+                    value=True,
+                    confidence=vocab_true["confidence"] * 0.70,
+                    matched_term=marker,
+                    canonical_form="Horton",
+                    source="lab_marker"
+                )
+
+        return DetectionResult(detected=False, value=None, confidence=0.0)
+
+    def detect_headache_location(self, text: str) -> DetectionResult:
+        """Détecte la localisation de la céphalée.
+
+        Args:
+            text: Texte médical
+
+        Returns:
+            DetectionResult avec localisation (frontal/temporal/occipital/unilateral/diffuse)
+        """
+        text_norm = self.normalize_text(text)
+
+        # Compter les matches pour chaque localisation
+        location_scores = {}
+
+        for location_type, vocab in self.headache_location_vocabulary.items():
+            score = 0
+            matched_terms = []
+
+            # Vérifier chaque catégorie de termes
+            for category in ["canonical", "patient_language"]:
+                terms = vocab.get(category, [])
+                for term in terms:
+                    if self.normalize_text(term) in text_norm:
+                        score += 1
+                        matched_terms.append(term)
+
+            if score > 0:
+                location_scores[location_type] = {
+                    "score": score,
+                    "matched_terms": matched_terms,
+                    "confidence": vocab["confidence"]
+                }
+
+        # Retourner la localisation avec le score le plus élevé
+        if location_scores:
+            best_location = max(location_scores.items(), key=lambda x: x[1]["score"])
+            location_name = best_location[0]
+            location_data = best_location[1]
+
+            return DetectionResult(
+                detected=True,
+                value=location_name,
+                confidence=location_data["confidence"],
+                matched_term=location_data["matched_terms"][0] if location_data["matched_terms"] else "",
+                canonical_form=location_name,
+                source="headache_location"
             )
 
         return DetectionResult(detected=False, value=None, confidence=0.0)

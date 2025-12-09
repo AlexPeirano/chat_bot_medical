@@ -76,7 +76,8 @@ class NLUv2:
             detected_fields.append("age")
             confidence_scores["age"] = 0.9
         else:
-            extracted_data["age"] = 50
+            # IMPORTANT: 35 ans évite faux positif règle AGE_SUP_50 (age_min=50)
+            extracted_data["age"] = 35  # Milieu tranche adulte (18-65)
             confidence_scores["age"] = 0.1
 
         if sex is not None:
@@ -265,6 +266,90 @@ class NLUv2:
                 "source": pattern_change_result.source
             }
 
+        # 6.6 CONTEXTE ONCOLOGIQUE (PRIORITÉ 1 - impact décision scanner/IRM)
+        cancer_result = self.vocab.detect_cancer_history(text)
+        if cancer_result.detected:
+            extracted_data["cancer_history"] = cancer_result.value
+            detected_fields.append("cancer_history")
+            confidence_scores["cancer_history"] = cancer_result.confidence
+            detection_trace["cancer_history"] = {
+                "matched_term": cancer_result.matched_term,
+                "canonical": cancer_result.canonical_form,
+                "source": cancer_result.source
+            }
+
+        # 6.7 VERTIGES (PRIORITÉ 2)
+        vertigo_result = self.vocab.detect_vertigo(text)
+        if vertigo_result.detected:
+            extracted_data["vertigo"] = vertigo_result.value
+            detected_fields.append("vertigo")
+            confidence_scores["vertigo"] = vertigo_result.confidence
+            detection_trace["vertigo"] = {
+                "matched_term": vertigo_result.matched_term,
+                "canonical": vertigo_result.canonical_form,
+                "source": vertigo_result.source
+            }
+
+        # 6.8 ACOUPHÈNES (PRIORITÉ 2)
+        tinnitus_result = self.vocab.detect_tinnitus(text)
+        if tinnitus_result.detected:
+            extracted_data["tinnitus"] = tinnitus_result.value
+            detected_fields.append("tinnitus")
+            confidence_scores["tinnitus"] = tinnitus_result.confidence
+            detection_trace["tinnitus"] = {
+                "matched_term": tinnitus_result.matched_term,
+                "canonical": tinnitus_result.canonical_form,
+                "source": tinnitus_result.source
+            }
+
+        # 6.9 TROUBLES VISUELS - TYPE (PRIORITÉ 2)
+        visual_result = self.vocab.detect_visual_disturbance_type(text)
+        if visual_result.detected:
+            extracted_data["visual_disturbance_type"] = visual_result.value
+            detected_fields.append("visual_disturbance_type")
+            confidence_scores["visual_disturbance_type"] = visual_result.confidence
+            detection_trace["visual_disturbance_type"] = {
+                "matched_term": visual_result.matched_term,
+                "canonical": visual_result.canonical_form,
+                "source": visual_result.source
+            }
+
+        # 6.10 DOULEURS ARTICULAIRES (PRIORITÉ 2 - lié Horton)
+        joint_pain_result = self.vocab.detect_joint_pain(text)
+        if joint_pain_result.detected:
+            extracted_data["joint_pain"] = joint_pain_result.value
+            detected_fields.append("joint_pain")
+            confidence_scores["joint_pain"] = joint_pain_result.confidence
+            detection_trace["joint_pain"] = {
+                "matched_term": joint_pain_result.matched_term,
+                "canonical": joint_pain_result.canonical_form,
+                "source": joint_pain_result.source
+            }
+
+        # 6.11 CRITÈRES HORTON (PRIORITÉ 2)
+        horton_result = self.vocab.detect_horton_criteria(text)
+        if horton_result.detected:
+            extracted_data["horton_criteria"] = horton_result.value
+            detected_fields.append("horton_criteria")
+            confidence_scores["horton_criteria"] = horton_result.confidence
+            detection_trace["horton_criteria"] = {
+                "matched_term": horton_result.matched_term,
+                "canonical": horton_result.canonical_form,
+                "source": horton_result.source
+            }
+
+        # 6.12 LOCALISATION CÉPHALÉE (PRIORITÉ 4)
+        location_result = self.vocab.detect_headache_location(text)
+        if location_result.detected:
+            extracted_data["headache_location"] = location_result.value
+            detected_fields.append("headache_location")
+            confidence_scores["headache_location"] = location_result.confidence
+            detection_trace["headache_location"] = {
+                "matched_term": location_result.matched_term,
+                "canonical": location_result.canonical_form,
+                "source": location_result.source
+            }
+
         # ====================================================================
         # ÉTAPE 7: PROFIL CLINIQUE CÉPHALÉE (réutilise nlu.py)
         # ====================================================================
@@ -298,8 +383,9 @@ class NLUv2:
         try:
             case = HeadacheCase(**extracted_data)
         except Exception as e:
+            # IMPORTANT: 35 ans évite faux positif règle AGE_SUP_50 (age_min=50)
             case = HeadacheCase(
-                age=extracted_data.get("age", 50),
+                age=extracted_data.get("age", 35),  # Milieu tranche adulte
                 sex=extracted_data.get("sex", "Other")
             )
             confidence_scores["validation_error"] = str(e)
