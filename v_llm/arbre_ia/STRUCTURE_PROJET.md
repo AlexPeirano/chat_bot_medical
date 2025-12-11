@@ -38,7 +38,7 @@ arbre_ia/
 
 ## Description des modules
 
-### 🚀 Point d'entrée
+###  Point d'entrée
 
 #### `main_hybrid.py`
 **Rôle:** Interface CLI interactive pour le dialogue médecin-système
@@ -54,7 +54,7 @@ python main_hybrid.py
 
 ---
 
-### 📦 Package `headache_assistants/`
+###  Package `headache_assistants/`
 
 #### NLU (Natural Language Understanding)
 
