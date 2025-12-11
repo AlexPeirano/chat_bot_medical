@@ -281,92 +281,110 @@ def _apply_contextual_adaptations(
     # RÈGLE 1: GROSSESSE / POST-PARTUM - IMAGERIE OBLIGATOIRE
     # ========================================================================
     if case.pregnancy_postpartum is True:
-        # CORRECTION BUG: Grossesse/post-partum = RED FLAG critique
-        # IRM + angio-IRM OBLIGATOIRE même si aucune imagerie initialement prescrite
-        # (risque TVC, PRES, éclampsie, HSA, SVCR)
+        # EXCEPTION: Si règle spécifique T1 (PREGNANCY_T1_BENIGN) appliquée, respecter son choix de différer
+        is_t1_deferral = (
+            recommendation.applied_rule_id == "PREGNANCY_T1_BENIGN" and
+            recommendation.urgency == "delayed"
+        )
 
-        scanner_found = False
-        irm_found = False
-        is_hsa_rule = recommendation.applied_rule_id and "HSA" in recommendation.applied_rule_id
-        is_immediate_urgency = recommendation.urgency == "immediate"
-        new_imaging = []
+        if not is_t1_deferral:
+            # CORRECTION BUG: Grossesse/post-partum = RED FLAG critique
+            # IRM + angio-IRM OBLIGATOIRE même si aucune imagerie initialement prescrite
+            # (risque TVC, PRES, éclampsie, HSA, SVCR)
 
-        # Si aucune imagerie prescrite initialement, FORCER IRM + angio-IRM
-        if not adapted_imaging or len(adapted_imaging) == 0:
-            new_imaging = ["irm_cerebrale", "angio_irm_veineuse"]
-            irm_found = True
-            # Forcer urgence à "urgent" si c'était "none"
-            if recommendation.urgency == "none":
-                recommendation = recommendation.model_copy(update={"urgency": "urgent"})
-            # Ajouter commentaire étiologies
-            adapted_comment = (
-                "Céphalée grossesse/post-partum = red flag. "
-                "Étiologies: TVC, PRES, éclampsie, HSA, SVCR, dissection, méningite. "
-                "IRM + angio-IRM veineuse (pas de scanner sauf urgence vitale). " +
-                adapted_comment
-            )
-        else:
-            # Imagerie déjà prescrite: adapter selon urgence
-            for exam in adapted_imaging:
-                if "scanner" in exam.lower():
-                    scanner_found = True
-                    # HSA et autres urgences vitales : scanner PRIORITAIRE malgré grossesse
-                    if is_hsa_rule or is_immediate_urgency:
-                        # Garder scanner mais ajouter IRM comme alternative
-                        new_imaging.append(exam)
-                        if "irm_cerebrale" not in new_imaging and "IRM_cerebrale" not in new_imaging:
-                            new_imaging.append("irm_cerebrale")
-                    else:
-                        # Contexte non urgent : privilégier IRM
-                        if "injection" in exam.lower() and "sans" not in exam.lower():
-                            new_imaging.append("IRM_cerebrale_avec_gadolinium")
-                        else:
-                            new_imaging.append("irm_cerebrale")
-                elif "irm" in exam.lower():
-                    irm_found = True
-                    new_imaging.append(exam)
-                else:
-                    new_imaging.append(exam)
+            scanner_found = False
+            irm_found = False
+            is_hsa_rule = recommendation.applied_rule_id and "HSA" in recommendation.applied_rule_id
+            is_immediate_urgency = recommendation.urgency == "immediate"
+            new_imaging = []
 
-            # TOUJOURS ajouter angio-IRM veineuse pour grossesse (recherche TVC)
-            if "angio_irm_veineuse" not in new_imaging and "angio-irm_veineuse" not in new_imaging:
-                new_imaging.append("angio_irm_veineuse")
+            # Si aucune imagerie prescrite initialement, FORCER IRM + angio-IRM
+            if not adapted_imaging or len(adapted_imaging) == 0:
+                new_imaging = ["irm_cerebrale", "angio_irm_veineuse"]
+                irm_found = True
+                # Forcer urgence à "urgent" si c'était "none"
+                if recommendation.urgency == "none":
+                    recommendation = recommendation.model_copy(update={"urgency": "urgent"})
 
-            # Forcer urgence minimale à "urgent" pour grossesse si ce n'était pas déjà immédiat
-            if recommendation.urgency not in ["immediate", "urgent"]:
-                recommendation = recommendation.model_copy(update={"urgency": "urgent"})
-
-            # Ajouter commentaire étiologies si pas déjà présent
-            if "TVC" not in adapted_comment and "thrombose" not in adapted_comment.lower():
-                adapted_comment = (
+                # Ajouter commentaire étiologies
+                pregnancy_comment = (
                     "Céphalée grossesse/post-partum = red flag. "
                     "Étiologies: TVC, PRES, éclampsie, HSA, SVCR, dissection, méningite. "
-                    "IRM + angio-IRM veineuse obligatoire. " +
-                    adapted_comment
+                    "IRM + angio-IRM veineuse (pas de scanner sauf urgence vitale). "
                 )
 
-        adapted_imaging = new_imaging
+                # Si le commentaire original dit "pas d'imagerie", le REMPLACER pour éviter contradiction
+                if "pas d'imagerie" in adapted_comment.lower() or "aucune imagerie" in adapted_comment.lower():
+                    adapted_comment = (
+                        pregnancy_comment +
+                        "Grossesse transforme même une céphalée bénigne en urgence (risque TVC, PRES, éclampsie). "
+                        "IRM + angio-IRM veineuse obligatoire."
+                    )
+                else:
+                    # Sinon, préfixer
+                    adapted_comment = pregnancy_comment + adapted_comment
+            else:
+                # Imagerie déjà prescrite: adapter selon urgence
+                for exam in adapted_imaging:
+                    if "scanner" in exam.lower():
+                        scanner_found = True
+                        # HSA et autres urgences vitales : scanner PRIORITAIRE malgré grossesse
+                        if is_hsa_rule or is_immediate_urgency:
+                            # Garder scanner mais ajouter IRM comme alternative
+                            new_imaging.append(exam)
+                            if "irm_cerebrale" not in new_imaging and "IRM_cerebrale" not in new_imaging:
+                                new_imaging.append("irm_cerebrale")
+                        else:
+                            # Contexte non urgent : privilégier IRM
+                            if "injection" in exam.lower() and "sans" not in exam.lower():
+                                new_imaging.append("IRM_cerebrale_avec_gadolinium")
+                            else:
+                                new_imaging.append("irm_cerebrale")
+                    elif "irm" in exam.lower():
+                        irm_found = True
+                        new_imaging.append(exam)
+                    else:
+                        new_imaging.append(exam)
 
-        # Ajouter précautions grossesse adaptées à l'urgence
-        precautions.append("PATIENTE ENCEINTE:")
-        if scanner_found:
-            if is_hsa_rule or is_immediate_urgency:
-                precautions.append("- Scanner acceptable en URGENCE VITALE (bénéfice > risque)")
-                precautions.append("- Protection abdominale plombée, dose minimale")
-                precautions.append("- IRM alternative si délai acceptable (mais moins sensible <12h pour HSA)")
-                contraindications.append("- Scanner à éviter si grossesse < 4 semaines (organogenèse)")
-            else:
-                precautions.append("- Scanner remplacé par IRM (éviter radiations)")
-                contraindications.append("- Scanner contre-indiqué sauf urgence vitale")
-        if irm_found or len(new_imaging) > 0:
-            # IRM acceptable dès 2e trimestre (13 sem), en urgence acceptable dès 1er trimestre
-            if is_immediate_urgency or recommendation.urgency == "urgent":
-                precautions.append("- IRM acceptable en urgence (risque TVC > risque IRM)")
-                precautions.append("- IRM idéale à partir 2e trimestre (> 13 sem)")
-            else:
-                contraindications.append("- IRM éviter 1er trimestre (< 13 sem) sauf urgence")
-            precautions.append("- Gadolinium contre-indiqué pendant grossesse (sauf urgence absolue)")
-        precautions.append("- Risque TVC augmenté en grossesse/post-partum")
+                # TOUJOURS ajouter angio-IRM veineuse pour grossesse (recherche TVC)
+                if "angio_irm_veineuse" not in new_imaging and "angio-irm_veineuse" not in new_imaging:
+                    new_imaging.append("angio_irm_veineuse")
+
+                # Forcer urgence minimale à "urgent" pour grossesse si ce n'était pas déjà immédiat
+                if recommendation.urgency not in ["immediate", "urgent"]:
+                    recommendation = recommendation.model_copy(update={"urgency": "urgent"})
+
+                # Ajouter commentaire étiologies si pas déjà présent
+                if "TVC" not in adapted_comment and "thrombose" not in adapted_comment.lower():
+                    adapted_comment = (
+                        "Céphalée grossesse/post-partum = red flag. "
+                        "Étiologies: TVC, PRES, éclampsie, HSA, SVCR, dissection, méningite. "
+                        "IRM + angio-IRM veineuse obligatoire. " +
+                        adapted_comment
+                    )
+
+            adapted_imaging = new_imaging
+
+            # Ajouter précautions grossesse adaptées à l'urgence
+            precautions.append("PATIENTE ENCEINTE:")
+            if scanner_found:
+                if is_hsa_rule or is_immediate_urgency:
+                    precautions.append("- Scanner acceptable en URGENCE VITALE (bénéfice > risque)")
+                    precautions.append("- Protection abdominale plombée, dose minimale")
+                    precautions.append("- IRM alternative si délai acceptable (mais moins sensible <12h pour HSA)")
+                    contraindications.append("- Scanner à éviter si grossesse < 4 semaines (organogenèse)")
+                else:
+                    precautions.append("- Scanner remplacé par IRM (éviter radiations)")
+                    contraindications.append("- Scanner contre-indiqué sauf urgence vitale")
+            if irm_found or len(new_imaging) > 0:
+                # IRM acceptable dès 2e trimestre (13 sem), en urgence acceptable dès 1er trimestre
+                if is_immediate_urgency or recommendation.urgency == "urgent":
+                    precautions.append("- IRM acceptable en urgence (risque TVC > risque IRM)")
+                    precautions.append("- IRM idéale à partir 2e trimestre (> 13 sem)")
+                else:
+                    contraindications.append("- IRM éviter 1er trimestre (< 13 sem) sauf urgence")
+                precautions.append("- Gadolinium contre-indiqué pendant grossesse (sauf urgence absolue)")
+            precautions.append("- Risque TVC augmenté en grossesse/post-partum")
     
     # ========================================================================
     # RÈGLE 2: CONTEXTE ONCOLOGIQUE - Scanner en priorité

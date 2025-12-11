@@ -49,7 +49,8 @@ class HybridNLU:
         self,
         confidence_threshold: float = 0.7,
         use_embedding: bool = True,
-        embedding_model: str = 'all-MiniLM-L6-v2'
+        embedding_model: str = 'all-MiniLM-L6-v2',
+        verbose: bool = False
     ):
         """Initialise le NLU hybride.
 
@@ -57,10 +58,12 @@ class HybridNLU:
             confidence_threshold: Seuil pour activer embedding (0-1)
             use_embedding: Activer la couche embedding
             embedding_model: Nom du modèle sentence-transformers
+            verbose: Afficher messages d'initialisation (défaut: False)
         """
         # Layer 1: Règles (toujours actif)
         self.rule_nlu = NLUv2()
         self.confidence_threshold = confidence_threshold
+        self.verbose = verbose
 
         # Layer 2: Embedding (optionnel)
         self.use_embedding = use_embedding and EMBEDDING_AVAILABLE
@@ -74,18 +77,21 @@ class HybridNLU:
     def _initialize_embedding(self, model_name: str):
         """Initialise le modèle d'embedding et pré-calcule les embeddings."""
         try:
-            print(f"[INIT] Chargement du modèle embedding '{model_name}'...")
+            if self.verbose:
+                print(f"[INIT] Chargement du modèle embedding '{model_name}'...")
             self.embedder = SentenceTransformer(model_name)
 
             # Pré-calculer les embeddings du corpus
-            print(f"[INIT] Pré-calcul des embeddings pour {len(self.examples)} exemples...")
+            if self.verbose:
+                print(f"[INIT] Pré-calcul des embeddings pour {len(self.examples)} exemples...")
             texts = [ex["text"] for ex in self.examples]
             self.example_embeddings = self.embedder.encode(
                 texts,
                 convert_to_numpy=True,
                 show_progress_bar=False
             )
-            print(f"[OK] Modèle embedding initialisé ({self.example_embeddings.shape})")
+            if self.verbose:
+                print(f"[OK] Modèle embedding initialisé ({self.example_embeddings.shape})")
 
         except Exception as e:
             warnings.warn(f"Erreur initialisation embedding: {e}. Mode règles uniquement.")

@@ -17,7 +17,8 @@ from datetime import datetime
 
 from .models import HeadacheCase
 from .medical_vocabulary import MedicalVocabulary, DetectionResult
-from .nlu import (
+from .pregnancy_utils import extract_pregnancy_trimester
+from .nlu_base import (
     extract_age,
     extract_sex,
     extract_intensity_score,
@@ -222,6 +223,19 @@ class NLUv2:
                 "canonical": pregnancy_result.canonical_form,
                 "source": pregnancy_result.source
             }
+
+            # 6.1.1 TRIMESTRE DE GROSSESSE (si enceinte)
+            # Extraction robuste: semaines, mois, jours, SA, trimestre explicite
+            if pregnancy_result.value is True:  # Si enceinte (pas post-partum)
+                trimester = extract_pregnancy_trimester(text)
+                if trimester is not None:
+                    extracted_data["pregnancy_trimester"] = trimester
+                    detected_fields.append("pregnancy_trimester")
+                    confidence_scores["pregnancy_trimester"] = 0.85
+                    detection_trace["pregnancy_trimester"] = {
+                        "trimester": trimester,
+                        "source": "robust_extraction"
+                    }
 
         # 6.2 TRAUMATISME
         trauma_result = self.vocab.detect_trauma(text)

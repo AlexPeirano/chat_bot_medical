@@ -105,6 +105,12 @@ class HeadacheCase(BaseModel):
         default=None,
         description="Grossesse en cours ou post-partum (<6 semaines)"
     )
+    pregnancy_trimester: Optional[int] = Field(
+        default=None,
+        ge=1,
+        le=3,
+        description="Trimestre de grossesse si enceinte (1=<14 sem, 2=14-28 sem, 3=>28 sem)"
+    )
     trauma: Optional[bool] = Field(
         default=None,
         description="Traumatisme crânien récent"

@@ -16,7 +16,7 @@ from datetime import datetime
 
 from .models import ChatMessage, ChatResponse, HeadacheCase, ImagingRecommendation
 from .nlu_hybrid import HybridNLU
-from .nlu import (
+from .nlu_base import (
     suggest_clarification_questions,
     get_missing_critical_fields
 )

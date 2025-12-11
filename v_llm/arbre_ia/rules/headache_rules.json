@@ -217,6 +217,23 @@
       }
     },
     {
+      "id": "PREGNANCY_T1_BENIGN",
+      "name": "Céphalée grossesse 1er trimestre - bénigne probable",
+      "description": "Céphalée aiguë bénigne au 1er trimestre (<14 sem) sans red flags. IRM à différer si possible.",
+      "category": "pregnancy_trimester_specific",
+      "logic": "all",
+      "conditions": {
+        "pregnancy_postpartum": true,
+        "pregnancy_trimester": 1,
+        "profile": "acute"
+      },
+      "recommendation": {
+        "imaging": [],
+        "urgency": "delayed",
+        "comment": "Céphalée 1er trimestre (<14 sem) sans signe d'alarme. Probablement migraine/tension. IRM À ÉVITER au 1er trimestre sauf urgence absolue (organogenèse). Surveillance clinique rapprochée. Réévaluation 48-72h. IRM différée si persistance après 14 sem. Consultation si aggravation ou apparition red flags."
+      }
+    },
+    {
       "id": "PREGNANCY_001",
       "name": "Céphalée aiguë pendant grossesse/post-partum",
       "description": "Céphalée nouvelle ou modifiée pendant grossesse ou post-partum. Multiples étiologies graves possibles.",

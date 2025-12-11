@@ -274,21 +274,7 @@ def interactive_mode(nlu: HybridNLU):
                 print("\nAssistant: Au revoir Docteur.\n")
                 break
 
-        elif response.headache_case:
-            # Afficher progression du cas en cours
-            case = response.headache_case
-            detected_count = sum([
-                case.onset != "unknown" and case.onset is not None,
-                case.profile != "unknown" and case.profile is not None,
-                case.fever is not None,
-                case.meningeal_signs is not None,
-                case.htic_pattern is not None,
-                case.neuro_deficit is not None,
-                case.trauma is not None,
-                case.seizure is not None,
-            ])
-            total_fields = 8
-            print(f"Progression: {detected_count}/{total_fields} champs detectes ({detected_count/total_fields*100:.0f}%)\n")
+        # Note: Progression du cas supprimée pour simplifier l'output
 
 
 def print_case_summary(case: HeadacheCase):
@@ -413,22 +399,8 @@ def batch_test_mode(nlu: HybridNLU, test_cases: list):
 
 def main():
     """Point d'entrée principal."""
-    print("\n╔" + "="*68 + "╗")
-    print("║" + " NLU HYBRIDE - Système d'analyse de céphalées ".center(68) + "║")
-    print("║" + " (Règles + Embedding) ".center(68) + "║")
-    print("╚" + "="*68 + "╝")
-
-    # Initialisation
-    print("\n[INIT] Initialisation du système NLU Hybride...")
-    print("       (Chargement du modèle embedding, cela peut prendre 2-3 secondes...)")
-
-    start = time.time()
-    nlu = HybridNLU(confidence_threshold=0.7)
-    init_time = time.time() - start
-
-    print(f"[OK] Système initialise en {init_time:.1f}s")
-    print(f"     • Corpus: {len(nlu.examples)} exemples medicaux")
-    print(f"     • Modele: {nlu.embedder.get_sentence_embedding_dimension() if nlu.embedder else 'N/A'} dimensions")
+    # Initialisation silencieuse
+    nlu = HybridNLU(confidence_threshold=0.7, verbose=False)
 
     # Mode de lancement
     if len(sys.argv) > 1:

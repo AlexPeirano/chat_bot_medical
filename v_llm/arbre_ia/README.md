@@ -2,11 +2,11 @@
 
 Assistant médical spécialisé dans l'évaluation des céphalées et la prescription d'imagerie.
 
-## 📋 Description
+##  Description
 
 Ce projet est une bibliothèque Python (sans API web) pour analyser les symptômes de céphalées et recommander les examens d'imagerie appropriés basés sur des règles médicales validées.
 
-## 🏗️ Structure du projet
+##  Structure du projet
 
 ```
 arbre_ia/
@@ -26,7 +26,7 @@ arbre_ia/
 └── README.md                 # Ce fichier
 ```
 
-## 🚀 Installation
+##  Installation
 
 ### Prérequis
 
@@ -38,7 +38,7 @@ arbre_ia/
 pip install -r requirements.txt
 ```
 
-## 💻 Utilisation
+##  Utilisation
 
 ### Exemple 1 : Évaluation simple
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     main()
 ```
 
-## 🧪 Tests
+##  Tests
 
 Exécuter tous les tests :
 
@@ -174,7 +174,7 @@ Avec couverture de code :
 pytest tests/ --cov=headache_assistants --cov-report=html
 ```
 
-## 📚 Architecture
+##  Architecture
 
 ### Composants principaux
 
@@ -212,7 +212,7 @@ Rules Engine → DiagnosticResult
 Dialogue Manager → Réponse formatée
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 Les règles médicales sont dans `rules/headache_rules.json`. Ce fichier contient :
 - Définitions des types de céphalées
@@ -221,7 +221,7 @@ Les règles médicales sont dans `rules/headache_rules.json`. Ce fichier contien
 - Protocoles d'imagerie
 - Arbre de décision
 
-## 📝 TODO / Améliorations futures
+##  TODO / Améliorations futures
 
 - [ ] Implémenter la logique complète d'évaluation dans `rules_engine.py`
 - [ ] Enrichir les patterns NLU
@@ -231,21 +231,21 @@ Les règles médicales sont dans `rules/headache_rules.json`. Ce fichier contien
 - [ ] Internationalisation (i18n)
 - [ ] Logging et monitoring
 
-## ⚕️ Avertissement médical
+##  Avertissement médical
 
 **Ce logiciel est destiné à des fins éducatives et de recherche uniquement.**
 
 Il ne remplace en aucun cas l'avis d'un professionnel de santé qualifié. En cas de symptômes graves ou d'urgence médicale, consultez immédiatement un médecin.
 
-## 📄 Licence
+##  Licence
 
 À définir selon vos besoins.
 
-## 👥 Auteur
+##  Auteur
 
 AlexPeirano
 
-## 🤝 Contribution
+##  Contribution
 
 Pour contribuer :
 1. Créer une branche feature
