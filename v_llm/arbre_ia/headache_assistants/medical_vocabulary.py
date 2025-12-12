@@ -78,7 +78,8 @@ class MedicalVocabulary:
                     "brutale", "brutal", "soudaine", "soudain", "instantanée", "instantané",
                     "d'emblée maximale", "maximale d'emblée", "violence maximale d'emblée",
                     "installation brutale", "d'installation brutale",
-                    "début brutal", "début soudain", "ictus céphalalgique"
+                    "début brutal", "début soudain", "ictus céphalalgique",
+                    "explosive", "explosif", "foudroyante", "foudroyant"
                 ],
                 "phrases": [
                     "en quelques secondes", "d'un coup", "d'un seul coup",
@@ -143,7 +144,9 @@ class MedicalVocabulary:
                     "afébril", "afébrile", "afebril", "afebrile",
                     "absence de fièvre", "absence de fievre",
                     "pas fébrile", "pas febrile",
-                    "non fébrile", "non febrile"
+                    "non fébrile", "non febrile",
+                    "aucune fièvre", "aucune fievre",
+                    "nie fièvre", "nie fievre", "nie toute fièvre", "nie toute fievre"
                 ],
                 "confidence": 0.85
             }
