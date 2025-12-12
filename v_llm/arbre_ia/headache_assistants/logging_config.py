@@ -101,13 +101,15 @@ def get_logger() -> logging.Logger:
     """Récupère le logger principal de l'application.
 
     Returns:
-        Logger configuré (ou logger par défaut si non initialisé)
+        Logger configuré (ou logger silencieux par défaut)
     """
     logger = logging.getLogger(LOGGER_NAME)
 
-    # Si pas de handlers, configurer avec les valeurs par défaut
+    # Si pas de handlers, configurer en mode SILENCIEUX par défaut
+    # Les logs sont stockés en mémoire mais pas affichés en console
+    # Utiliser setup_logging(enable_console=True) pour activer l'affichage
     if not logger.handlers:
-        setup_logging()
+        setup_logging(enable_console=False)
 
     return logger
 

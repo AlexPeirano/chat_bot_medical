@@ -136,9 +136,15 @@ class MedicalVocabulary:
                 "confidence": 0.90
             },
             False: {
-                "canonical": ["sans fièvre", "apyrétique"],
+                "canonical": ["sans fièvre", "sans fievre", "apyrétique", "apyretique"],
                 "acronyms": ["apyr"],
-                "synonyms": ["pas de fièvre", "afébril", "afébrile"],
+                "synonyms": [
+                    "pas de fièvre", "pas de fievre",
+                    "afébril", "afébrile", "afebril", "afebrile",
+                    "absence de fièvre", "absence de fievre",
+                    "pas fébrile", "pas febrile",
+                    "non fébrile", "non febrile"
+                ],
                 "confidence": 0.85
             }
         }
@@ -172,12 +178,19 @@ class MedicalVocabulary:
                 "confidence": 0.95  # Haute confiance car signe critique
             },
             False: {
-                "canonical": ["sans signe méningé", "pas de syndrome méningé"],
-                "acronyms": ["rdn-", "rdn nég", "kernig-", "brudzinski-"],
+                "canonical": [
+                    "sans signe méningé", "sans signe meninge",
+                    "pas de syndrome méningé", "pas de syndrome meninge"
+                ],
+                "acronyms": ["rdn-", "rdn nég", "rdn neg", "kernig-", "brudzinski-"],
                 "synonyms": [
                     "sans raideur", "pas de raideur", "pas de rdn",
                     "pas de kernig", "pas de brudzinski",
-                    "nuque souple", "kernig négatif", "brudzinski négatif"
+                    "nuque souple", "kernig négatif", "brudzinski négatif",
+                    "aucune raideur", "aucune raideur de nuque",
+                    "aucun signe méningé", "aucun signe meninge",
+                    "pas de raideur de nuque", "pas de raideur nuque",
+                    "raideur de nuque absente", "raideur nuque absente"
                 ],
                 "confidence": 0.85
             }
@@ -677,7 +690,9 @@ class MedicalVocabulary:
             True: {
                 "canonical": [
                     "changement récent", "modification récente",
-                    "aggravation récente", "aggravé récemment"
+                    "aggravation récente", "aggravé récemment",
+                    "ont changé", "a changé", "ont change", "a change",
+                    "changé récemment", "change recemment"
                 ],
                 "temporal_markers": [
                     "pire depuis", "pire dep", "aggravé depuis",
@@ -692,7 +707,10 @@ class MedicalVocabulary:
                     "beaucoup plus forte", "beaucoup plus intense",
                     "intensité augmentée", "intensité croissante",
                     "douleur accrue", "s'aggrave", "empire",
-                    "devient de pire en pire"
+                    "devient de pire en pire",
+                    "plus fréquentes", "plus frequentes",
+                    "plus intenses", "plus intense",
+                    "durent plus longtemps"
                 ],
                 "new_symptoms": [
                     "nouveaux symptômes", "nouveau symptôme",
@@ -702,7 +720,8 @@ class MedicalVocabulary:
                 "temporal_windows": [
                     "depuis 1 semaine", "depuis une semaine",
                     "depuis quelques jours", "depuis qqs jours",
-                    "depuis 2 semaines", "depuis 1 mois"
+                    "depuis 2 semaines", "depuis 1 mois",
+                    "depuis 2 mois", "depuis quelques mois"
                 ],
                 "confidence": 0.85
             },
@@ -1083,6 +1102,11 @@ class MedicalVocabulary:
             for term in vocab_true.get("canonical", []) + vocab_true.get("acronyms", []) + vocab_true.get("synonyms", []):
                 term_norm = self.normalize_text(term)
                 if term_norm in text_norm:
+                    # Vérifier qu'il n'est pas précédé par une négation
+                    negation_pattern = r'(?:pas de |sans |aucun[e]? |absence de |non )' + re.escape(term_norm)
+                    if re.search(negation_pattern, text_norm):
+                        # C'est une négation, ne pas ajouter comme positif
+                        continue
                     pattern = r'(?<![a-z])' + re.escape(term_norm)
                     if re.search(pattern, text_norm):
                         pos = text_norm.find(term_norm)
@@ -1177,7 +1201,13 @@ class MedicalVocabulary:
             # Éviter faux positifs: "féb" isolé mais pas dans "afébrile"
             term_norm = self.normalize_text(term)
             if term_norm in text_norm:
-                # Vérifier qu'il n'est pas précédé de "a" ou "sans"
+                # Vérifier qu'il n'est pas précédé par une négation
+                # Patterns de negation: "pas de X", "sans X", "aucun X", "absence de X"
+                negation_pattern = r'(?:pas de |sans |aucun[e]? |absence de |non )' + re.escape(term_norm)
+                if re.search(negation_pattern, text_norm):
+                    # C'est une négation, ne pas matcher comme positif
+                    continue
+                # Vérifier qu'il n'est pas précédé de "a" (pour afébrile)
                 pattern = r'(?<![a-z])' + re.escape(term_norm)
                 if re.search(pattern, text_norm):
                     return DetectionResult(
@@ -1270,7 +1300,13 @@ class MedicalVocabulary:
 
         # Signes cliniques
         for sign in vocab_true.get("clinical_signs", []):
-            if self.normalize_text(sign) in text_norm:
+            sign_norm = self.normalize_text(sign)
+            if sign_norm in text_norm:
+                # Vérifier qu'il n'est pas précédé par une négation
+                negation_pattern = r'(?:pas de |sans |aucun[e]? |absence de |non )' + re.escape(sign_norm)
+                if re.search(negation_pattern, text_norm):
+                    # C'est une négation, ne pas matcher comme positif
+                    continue
                 return DetectionResult(
                     detected=True,
                     value=True,

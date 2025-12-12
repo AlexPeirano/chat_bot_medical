@@ -231,9 +231,10 @@ def _interpret_yes_no_response(text: str, field_name: str, current_case: Headach
     
     # Si c'est un champ booléen
     boolean_fields = [
-        'fever', 'meningeal_signs', 'neuro_deficit', 'seizure', 
-        'htic_pattern', 'pregnancy_postpartum', 'trauma', 
-        'recent_pl_or_peridural', 'immunosuppression'
+        'fever', 'meningeal_signs', 'neuro_deficit', 'seizure',
+        'htic_pattern', 'pregnancy_postpartum', 'trauma',
+        'recent_pl_or_peridural', 'immunosuppression',
+        'recent_pattern_change'  # Changement récent de pattern (red flag)
     ]
     
     if field_name in boolean_fields:

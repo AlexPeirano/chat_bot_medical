@@ -92,17 +92,20 @@ PROFILE_PATTERNS = {
     ],
     "chronic": [
         r"chronique",
-        r"depuis (?:plusieurs|des) (?:mois|années?)",
+        r"depuis (?:plusieurs|des) (?:mois|années?|ans)",
         r"de longue date",
         r"permanente?",
         r"céphalée chronique quotidienne",
         r"depuis (?:\d+|de nombreux) mois",
-        r"depuis (?:\d+|de nombreuses) années?",
+        r"depuis (?:\d+|de nombreuses?) (?:années?|ans)",
+        r"depuis \d+\s*ans?",  # "depuis 15 ans", "depuis 10 an"
         r">3\s*mois",  # >3mois (notation médicale)
         r"quotid(?:iennes?)?",  # quotid (abréviation)
         r"(?:tous les|chaque) jours?",
         r"cch (?:chroniques?|quotid)",  # CCH chroniques
-        r"fond (?:douloureux|migraineux)"  # Fond douloureux permanent
+        r"fond (?:douloureux|migraineux)",  # Fond douloureux permanent
+        r"migraineuse? (?:connue?|depuis)",  # "migraineuse connue", "migraineux depuis"
+        r"(?:migraines?|céphalées?) (?:connues?|habituelles?)"  # "migraines connues"
     ]
 }
 
@@ -482,9 +485,15 @@ RECENT_PL_OR_PERIDURAL_PATTERNS = {
         r"pl\s+j-?\d+",  # PL J-3, PL J3
         r"péridurale\s+il y a\s+\d+\s*j",
         r"ponction\s+il y a\s+\d+\s*j",
+        # Nouvelles formulations
+        r"pl\s+faite",  # PL faite il y a...
+        r"depuis\s+(?:la\s+)?pl",  # depuis PL, depuis la PL
+        r"depuis\s+(?:la\s+)?ponction",  # depuis ponction
+        r"\bpl\b.*\bil y a\b",  # PL ... il y a (plus flexible)
         # Contexte clinique typique
         r"céphalée.*(?:position debout|orthostatique)",
         r"amélioration (?:en )?décubitus",
+        r"am[ée]lioration.*d[ée]cubitus",  # sans accent
         r"céphalée positionnelle"
     ]
 }

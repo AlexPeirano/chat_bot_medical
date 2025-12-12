@@ -1,253 +1,347 @@
-# Headache Assistant - Backend Python
+# Headache Assistant - Aide a la Decision Medicale
 
-Assistant médical spécialisé dans l'évaluation des céphalées et la prescription d'imagerie.
+**Backend Python pour l'evaluation des cephalees et la prescription d'imagerie cerebrale**
 
-##  Description
+---
 
-Ce projet est une bibliothèque Python (sans API web) pour analyser les symptômes de céphalées et recommander les examens d'imagerie appropriés basés sur des règles médicales validées.
+## Contexte et Motivation
 
-##  Structure du projet
+Ce projet est ne d'un constat alarmant : **environ 30% des prescriptions d'imagerie cerebrale pour cephalees seraient inappropriees** - soit par exces (examens inutiles exposant le patient a des radiations et coutant au systeme de sante), soit par defaut (urgences non detectees mettant en jeu le pronostic vital).
+
+Ce systeme a ete developpe dans un cadre academique en partenariat avec un hopital, avec l'objectif de fournir aux medecins un outil d'aide a la decision base sur les **guidelines medicales francaises** pour l'evaluation des cephalees.
+
+### Objectifs
+
+1. **Reduire les erreurs de prescription** en guidant le praticien a travers un arbre decisionnel valide
+2. **Detecter les urgences** (HSA, meningite, HTIC) qui necessitent une imagerie immediate
+3. **Eviter les examens inutiles** pour les cephalees benignes bien caracterisees
+4. **Adapter les recommandations** aux contextes specifiques (grossesse, immunodepression, age)
+
+---
+
+## Architecture du Systeme
+
+Ce repository constitue le **backend** du systeme. Un frontend web sera developpe separement pour l'interface utilisateur finale.
 
 ```
 arbre_ia/
-├── headache_assistants/      # Package principal
-│   ├── __init__.py           # Exports publics
-│   ├── models.py             # Modèles de données (dataclasses)
-│   ├── rules_engine.py       # Moteur de règles médicales
-│   ├── nlu.py                # Compréhension du langage naturel
-│   └── dialogue.py           # Gestionnaire de dialogue
-├── rules/                    # Règles médicales
-│   ├── headache_rules.txt    # Règles source (texte)
-│   └── headache_rules.json   # Règles structurées (JSON)
-├── tests/                    # Tests unitaires
-│   ├── test_rules_engine.py
-│   └── test_nlu.py
-├── requirements.txt          # Dépendances
-└── README.md                 # Ce fichier
+├── main_hybrid.py                 # Interface CLI interactive (demo)
+├── headache_assistants/           # Package Python principal
+│   ├── models.py                  # Modeles Pydantic (HeadacheCase, etc.)
+│   ├── dialogue.py                # Gestionnaire de dialogue interactif
+│   ├── rules_engine.py            # Moteur de regles medicales (31 regles)
+│   ├── prescription.py            # Generation d'ordonnances
+│   ├── logging_config.py          # Audit trail des decisions
+│   │
+│   ├── nlu_base.py                # Extraction de base (age, sexe, intensite)
+│   ├── nlu_v2.py                  # NLU regles + vocabulaire medical
+│   ├── nlu_hybrid.py              # NLU hybride (regles + embeddings)
+│   ├── medical_vocabulary.py      # Ontologie medicale (2400 lignes)
+│   ├── medical_examples_corpus.py # Corpus d'exemples annotes (86 cas)
+│   └── pregnancy_utils.py         # Detection trimestre de grossesse
+│
+├── rules/
+│   └── headache_rules.json        # 31 regles medicales structurees
+│
+├── tests_validation/              # Suite de tests (206 tests)
+│   ├── test_inputs_utilisateur_reels.py # Tests avec inputs realistes (46 tests)
+│   ├── test_scenarios_dialogue.py # Tests des scenarios utilisateur
+│   ├── test_nlu_hybrid.py         # Tests du NLU hybride
+│   ├── test_medical_vocabulary.py # Tests du vocabulaire medical
+│   └── ...
+│
+└── ordonnances/                   # Ordonnances generees (sortie)
 ```
 
-##  Installation
+---
 
-### Prérequis
+## Fonctionnement
+
+### Pipeline de Decision
+
+```
+Description clinique (texte libre)
+         |
+         v
++-----------------------------------------------------+
+|  NLU HYBRIDE                                        |
+|  - Extraction: age, sexe, duree, intensite          |
+|  - Detection: red flags, profil temporel            |
+|  - Enrichissement: embeddings si confiance basse    |
++-----------------------------------------------------+
+         |
+         v
++-----------------------------------------------------+
+|  DIALOGUE INTERACTIF                                |
+|  Questions ciblees pour informations manquantes     |
+|  (fievre? syndrome meninge? aggravation recente?)   |
++-----------------------------------------------------+
+         |
+         v
++-----------------------------------------------------+
+|  MOTEUR DE REGLES (31 regles medicales)             |
+|  - Urgences: HSA, meningite, HTIC, dissection       |
+|  - Contextes: grossesse, immunodepression           |
+|  - Adaptations: trimestre, contre-indications       |
++-----------------------------------------------------+
+         |
+         v
+    Recommandation
+    (imagerie, urgence, precautions)
+```
+
+### Exemple de Cas Clinique
+
+**Entree:** "Femme 28 ans enceinte de 8 semaines, cephalee brutale depuis 2h"
+
+**Analyse:**
+- Age: 28 ans
+- Sexe: F
+- Grossesse: Oui (T1 - 8 semaines)
+- Onset: Brutal (thunderclap)
+- Duree: 2 heures
+
+**Sortie:**
+- **Urgence:** IMMEDIATE
+- **Imagerie:** Scanner cerebral sans injection (IRM contre-indiquee T1 sauf urgence vitale)
+- **Suspicion:** HSA - Hemorragie sous-arachnoidienne
+- **Precautions:** Eviter gadolinium, protocole urgence obstetricale
+
+---
+
+## Installation
+
+### Prerequis
 
 - Python 3.11+
+- pip
 
-### Installation des dépendances
+### Installation des dependances
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements_hybrid.txt
 ```
 
-##  Utilisation
+**Dependances principales:**
+- `pydantic>=2.0.0` - Validation des donnees
+- `sentence-transformers>=2.2.0` - Embeddings pour NLU hybride
+- `torch>=2.0.0` - Backend pour sentence-transformers
+- `pytest>=7.0.0` - Tests
 
-### Exemple 1 : Évaluation simple
+---
+
+## Utilisation
+
+### Mode Demo (CLI Interactive)
+
+```bash
+python main_hybrid.py
+```
+
+Le systeme demarre en mode dialogue interactif:
+
+```
+======================================================================
+ASSISTANT MEDICAL - EVALUATION DES CEPHALEES (NLU HYBRIDE)
+======================================================================
+
+Bonjour Docteur,
+Decrivez le cas clinique de votre patient.
+
+Commandes disponibles:
+  /aide        - Afficher cette aide
+  /ordonnance  - Generer une ordonnance (apres evaluation)
+  /logs        - Voir guidelines et logs de session
+  /reset       - Commencer un nouveau cas
+  /quit        - Quitter le programme
+======================================================================
+
+Vous: patient 50 ans cephalee brutale intense
+```
+
+### Generation d'ordonnance
 
 ```python
-from headache_assistants import HeadacheCharacteristics, RulesEngine
+from headache_assistants.prescription import generate_prescription
 
-# Créer le moteur de règles
-engine = RulesEngine()
-
-# Définir les caractéristiques de la céphalée
-characteristics = HeadacheCharacteristics(
-    onset_type="brutal",
-    is_recent=True,
-    has_fever=True,
-    intensity=9
+# Apres evaluation complete
+filepath = generate_prescription(
+    case=response.headache_case,
+    recommendation=response.imaging_recommendation,
+    doctor_name="Dr. Martin"
 )
-
-# Évaluer
-result = engine.evaluate(characteristics)
-
-# Afficher les résultats
-print(f"Diagnostic : {result.primary_diagnosis.headache_type}")
-print(f"Confiance : {result.primary_diagnosis.confidence:.0%}")
-print(f"Signes d'alarme : {result.red_flags}")
-print(f"Imagerie recommandée : {result.imaging_recommendation}")
+print(f"Ordonnance generee: {filepath}")
 ```
 
-### Exemple 2 : Utilisation du dialogue manager
+---
 
-```python
-from headache_assistants import DialogueManager
+## Tests
 
-# Créer le gestionnaire de dialogue
-dialogue = DialogueManager()
+Le projet dispose d'une suite de **206 tests** couvrant:
+- **46 tests avec inputs utilisateur realistes** (strings en langage naturel)
+- Scenarios de dialogue utilisateur
+- Extraction NLU (age, sexe, profils temporels)
+- Detection des red flags medicaux
+- Gestion des negations ("pas de fievre", "aucune raideur de nuque")
+- Moteur de regles medicales
+- Cas de non-regression
 
-# Démarrer une session
-session = dialogue.start_session()
-print(f"Session ID : {session.session_id}")
-
-# Question initiale
-print(dialogue.get_initial_question())
-
-# Traiter la réponse du patient
-response = dialogue.process_user_input(
-    session.session_id,
-    "J'ai une douleur brutale qui a commencé il y a 2 heures, très intense avec de la fièvre"
-)
-
-print(response["message"])
-print(f"Type : {response['type']}")
-
-# Obtenir le résumé de la session
-summary = dialogue.get_session_summary(session.session_id)
-print(summary)
-```
-
-### Exemple 3 : Extraction NLU
-
-```python
-from headache_assistants import NLUEngine
-
-# Créer le moteur NLU
-nlu = NLUEngine()
-
-# Analyser une description textuelle
-text = "J'ai une douleur pulsatile d'un côté, qui a commencé progressivement. L'intensité est à 8/10."
-
-characteristics = nlu.extract_characteristics(text)
-
-print(f"Type de douleur : {characteristics.pain_type}")
-print(f"Latéralité : {characteristics.laterality}")
-print(f"Intensité : {characteristics.intensity}")
-```
-
-### Exemple 4 : Script complet
-
-```python
-from headache_assistants import DialogueManager, HeadacheCharacteristics
-
-def main():
-    # Initialiser le dialogue
-    dialogue = DialogueManager()
-    session = dialogue.start_session()
-    
-    print("=== Assistant Céphalées ===")
-    print(dialogue.get_initial_question())
-    print()
-    
-    # Simulation d'un échange
-    user_inputs = [
-        "J'ai une douleur intense qui a commencé brutalement ce matin",
-        "Oui, j'ai de la fièvre",
-        "La douleur est à 9/10"
-    ]
-    
-    for user_input in user_inputs:
-        print(f"Patient : {user_input}")
-        response = dialogue.process_user_input(session.session_id, user_input)
-        print(f"Assistant : {response['message']}")
-        print()
-        
-        if response['type'] == 'emergency':
-            print("⚠️ URGENCE DÉTECTÉE")
-            break
-    
-    # Résumé final
-    summary = dialogue.get_session_summary(session.session_id)
-    if summary and summary['diagnostic_result']:
-        print(f"Diagnostic : {summary['diagnostic_result']}")
-
-if __name__ == "__main__":
-    main()
-```
-
-##  Tests
-
-Exécuter tous les tests :
+### Lancer tous les tests
 
 ```bash
-pytest tests/ -v
+pytest tests_validation/ -v
 ```
 
-Exécuter un fichier de test spécifique :
+### Lancer un fichier specifique
 
 ```bash
-pytest tests/test_rules_engine.py -v
-pytest tests/test_nlu.py -v
+pytest tests_validation/test_scenarios_dialogue.py -v
 ```
 
-Avec couverture de code :
+### Avec couverture
 
 ```bash
-pytest tests/ --cov=headache_assistants --cov-report=html
+pytest tests_validation/ --cov=headache_assistants --cov-report=html
 ```
 
-##  Architecture
+---
 
-### Composants principaux
+## Regles Medicales
 
-1. **models.py** : Définit les structures de données
-   - `HeadacheCharacteristics` : Caractéristiques de la céphalée
-   - `Diagnosis` : Résultat diagnostique
-   - `ImagingRecommendation` : Recommandations d'imagerie
-   - `DialogueState` : État du dialogue
+Le systeme utilise **31 regles medicales** categorisees par niveau d'urgence:
 
-2. **rules_engine.py** : Moteur de règles médicales
-   - Charge les règles depuis `headache_rules.json`
-   - Évalue les symptômes
-   - Détecte les red flags (signes d'alarme)
-   - Génère les recommandations d'imagerie
+| Categorie | Exemples | Urgence |
+|-----------|----------|---------|
+| **Urgences aigues** | HSA, Meningite, HTIC, Dissection arterielle | IMMEDIATE |
+| **Grossesse/Post-partum** | TVC, Eclampsie, PRES | URGENT |
+| **Contextes specifiques** | Immunodepression + fievre, Cancer + cephalee | URGENT |
+| **Subaigues** | Arterite temporale, Tumeur suspectee | PROGRAMME (< 7j) |
+| **Chroniques** | Migraine, Tension, CCQ sans changement | NON URGENT |
 
-3. **nlu.py** : Compréhension du langage naturel
-   - Extraction de caractéristiques depuis texte libre
-   - Détection de patterns
-   - Normalisation du texte
+### Acces aux guidelines
 
-4. **dialogue.py** : Gestion du dialogue
-   - Orchestration de la conversation
-   - Génération de questions
-   - Coordination NLU + Rules Engine
+Depuis le mode interactif, tapez `/logs` puis `[1]` pour consulter les regles.
 
-### Flux de données
+---
 
-```
-Entrée utilisateur (texte)
-    ↓
-NLU Engine → HeadacheCharacteristics
-    ↓
-Rules Engine → DiagnosticResult
-    ↓
-Dialogue Manager → Réponse formatée
+## Logging et Tracabilite
+
+Le systeme integre un **audit trail** pour la tracabilite des decisions medicales:
+
+```python
+from headache_assistants.logging_config import setup_logging, log_medical_decision
+
+# Activer les logs en mode debug
+setup_logging(level=logging.DEBUG, enable_console=True)
+
+# Les decisions sont automatiquement tracees
+# Format: [timestamp] DECISION MEDICALE: HSA_001 (urgence: immediate, confiance: 95%)
 ```
 
-##  Configuration
+Par defaut, les logs sont desactives en console pour ne pas polluer l'interface.
 
-Les règles médicales sont dans `rules/headache_rules.json`. Ce fichier contient :
-- Définitions des types de céphalées
-- Critères diagnostiques
-- Red flags (signes d'alarme)
-- Protocoles d'imagerie
-- Arbre de décision
+---
 
-##  TODO / Améliorations futures
+## Composants Techniques
 
-- [ ] Implémenter la logique complète d'évaluation dans `rules_engine.py`
-- [ ] Enrichir les patterns NLU
-- [ ] Ajouter l'intégration avec des modèles de langage (GPT, etc.)
-- [ ] Créer une interface CLI interactive
-- [ ] Ajouter la sérialisation des sessions (JSON, DB)
-- [ ] Internationalisation (i18n)
-- [ ] Logging et monitoring
+### NLU Hybride (3 couches)
 
-##  Avertissement médical
+1. **nlu_base.py** - Extraction regex (age, sexe, duree, intensite)
+2. **nlu_v2.py** - Vocabulaire medical + patterns cliniques
+3. **nlu_hybrid.py** - Enrichissement par embeddings si confiance < 70%
 
-**Ce logiciel est destiné à des fins éducatives et de recherche uniquement.**
+**Performance:**
+- 90% des cas traites par regles seules (< 10ms)
+- 10% enrichis par embeddings (~50ms)
 
-Il ne remplace en aucun cas l'avis d'un professionnel de santé qualifié. En cas de symptômes graves ou d'urgence médicale, consultez immédiatement un médecin.
+### Vocabulaire Medical
 
-##  Licence
+`medical_vocabulary.py` contient une ontologie de 2400 lignes couvrant:
+- Synonymes medicaux (rdn = raideur de nuque)
+- Acronymes (HSA, HTIC, TVC)
+- Variations linguistiques (fievre/febrile/hyperthermie)
+- Anti-patterns pour eviter les faux positifs
 
-À définir selon vos besoins.
+### Detection Grossesse
 
-##  Auteur
+`pregnancy_utils.py` detecte le trimestre depuis des formats varies:
+- "8 semaines", "8 SA", "2 mois"
+- "1er trimestre", "T2", "3eme trimestre"
+- Calcul automatique: T1 < 14 sem, T2 14-27 sem, T3 >= 28 sem
 
-AlexPeirano
+---
 
-##  Contribution
+## Avertissement Medical
 
-Pour contribuer :
-1. Créer une branche feature
-2. Ajouter des tests
-3. Soumettre une pull request
+**ATTENTION: Cet outil est une aide a la decision, pas un dispositif medical certifie.**
+
+- L'evaluation clinique du medecin reste primordiale
+- En cas de doute, un avis specialise est recommande
+- Ne remplace pas un examen neurologique complet
+
+---
+
+## Licences et Conformite
+
+### Code Source du Projet
+
+Le code source de ce projet (headache_assistants/, rules/, tests_validation/) est developpe dans un cadre academique. Pour tout usage en production hospitaliere, contactez l'auteur.
+
+### Dependances et Licences
+
+| Dependance | Licence | Usage Commercial | Notes |
+|------------|---------|------------------|-------|
+| **Python** | PSF License | OK | Licence permissive |
+| **Pydantic** | MIT | OK | [Licence MIT](https://github.com/pydantic/pydantic/blob/main/LICENSE) - usage commercial autorise |
+| **PyTorch** | BSD-3-Clause | OK | [Licence BSD](https://github.com/pytorch/pytorch/blob/main/LICENSE) - usage commercial autorise |
+| **NumPy** | BSD-3-Clause | OK | Usage commercial autorise |
+| **pytest** | MIT | OK | Outil de test uniquement (non deploye en production) |
+| **sentence-transformers** | Apache 2.0 | OK | Bibliotheque elle-meme OK |
+
+### Point d'Attention : Modele d'Embedding
+
+Le modele par defaut `all-MiniLM-L6-v2` utilise pour les embeddings est sous licence Apache 2.0, **MAIS** ses donnees d'entrainement incluent des datasets (MS MARCO, GooAQ) qui **ne sont pas autorises pour usage commercial**.
+
+**Impact pour un hopital :**
+- Le systeme fonctionne a **90% en mode regles** (sans embedding) - pas d'impact
+- Les **10% restants** utilisent l'embedding comme fallback
+
+**Solutions recommandees pour usage hospitalier :**
+
+1. **Option A - Desactiver l'embedding** (recommande pour conformite immediate)
+   ```python
+   # Dans nlu_hybrid.py, forcer le mode regles seules
+   nlu = HybridNLU(confidence_threshold=1.0)  # Jamais de fallback embedding
+   ```
+
+2. **Option B - Utiliser un modele alternatif** avec licence 100% commerciale :
+   - `BAAI/bge-m3` (MIT License) - Multilingual, haute performance
+   - `Snowflake/arctic-embed-m` (Apache 2.0, donnees commerciales OK)
+   - `mixedbread-ai/mxbai-embed-large-v1` (Apache 2.0, donnees commerciales OK)
+
+3. **Option C - Entrainer un modele proprietaire** sur donnees medicales licenciees
+
+### Regles Medicales (rules/headache_rules.json)
+
+Les regles medicales sont basees sur les **guidelines medicales francaises** publiques. Elles ne contiennent pas de contenu sous copyright tiers.
+
+### Recommandation pour Deploiement Hospitalier
+
+Pour un deploiement en production dans un hopital, nous recommandons :
+
+1. Audit juridique par le service juridique de l'etablissement
+2. Desactivation ou remplacement du modele d'embedding (Option A ou B ci-dessus)
+3. Validation par le comite d'ethique si applicable
+4. Tests cliniques avant mise en production
+
+---
+
+## Auteur
+
+Alex Peirano - Projet academique en partenariat hospitalier
+
+---
+
+## Contact
+
+Pour questions concernant les licences ou l'usage en milieu hospitalier, contactez l'auteur.
