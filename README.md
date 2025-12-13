@@ -23,6 +23,21 @@ Ce systeme a ete developpe dans un cadre academique en partenariat avec un hopit
 
 Ce repository constitue le **backend** du systeme. Un frontend web sera developpe separement pour l'interface utilisateur finale.
 
+chat_bot_medical-1/
+├── arbre_ia/                      # Backend Python (FastAPI)
+│   ├── api.py                     # API REST (endpoint /chat)
+│   ├── main_hybrid.py             # Interface CLI (demo)
+│   ├── headache_assistants/       # Moteur médical principal
+│   └── rules/                     # Règles médicales (31 règles)
+│
+├── frontend/
+│   └── frontend_hybride/          # Application desktop (React + Tauri)
+│       ├── src/                   # UI React (chat médical)
+│       ├── src-tauri/             # Configuration Tauri
+│       └── package.json
+│
+└── tests_validation/              # Suite de tests (206 tests)
+
 ```
 arbre_ia/
 ├── main_hybrid.py                 # Interface CLI interactive (demo)
@@ -115,11 +130,26 @@ Description clinique (texte libre)
 
 - Python 3.11+
 - pip
+- node.js 18+
+- npm
+- Rust (pour Tauri)
+
+### Vérifications rapides
+
+python3 --version
+node --version
+npm --version
+rustc --version
 
 ### Installation des dependances
 
 ```bash
 pip install -r requirements_hybrid.txt
+```
+```bash
+cd frontend/frontend_hybride
+npm install
+npm install -g @tauri-apps/cli #(une seule fois par machine)
 ```
 
 **Dependances principales:**
@@ -128,7 +158,7 @@ pip install -r requirements_hybrid.txt
 - `torch>=2.0.0` - Backend pour sentence-transformers
 - `pytest>=7.0.0` - Tests
 
----
+
 
 ## Utilisation
 
@@ -157,6 +187,27 @@ Commandes disponibles:
 ======================================================================
 
 Vous: patient 50 ans cephalee brutale intense
+```
+
+### Lancement du logiciel (mode officiel)
+
+Depuis la racine du projet
+```bash
+uvicorn arbre_ia.api:app --port 8000
+```
+Résultat attendu : "Application startup complete."
+!! Ne pas fermer ce terminal !!
+
+Puis, dans un second terminal,
+```bash
+cd frontend/frontend_hybride
+npm run tauri dev
+```
+=> Une fenêtre desktop s'ouvre avec l'assistant médical conversationnel.
+
+(Optionnel) Lancer uniquement le frontend web pour debug l' UI
+```bash
+npm run dev
 ```
 
 ### Generation d'ordonnance
