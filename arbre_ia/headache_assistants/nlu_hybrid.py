@@ -27,13 +27,21 @@ Amélioration v5:
     - Complète les N-grams pour les mots simples à forte valeur sémantique
     - Exemples: "brutale" → onset:thunderclap, "fébrile" → fever:True
 
+Amélioration v6:
+    - Fuzzy matching pour correction orthographique
+    - Distance de Levenshtein pour tolérance aux fautes de frappe
+    - Dictionnaire de termes médicaux critiques (100+ termes)
+    - Seuil de similarité configurable (défaut: 0.75)
+    - Exemples: "cephalee" → "céphalée", "fievre" → "fièvre"
+
 Pipeline complet:
     1. N-grams (expressions composées)
     2. Mots-clés (index inversé)
-    3. Négations (pas de, sans, absence de)
-    4. Règles NLU v2
-    5. Application N-grams + Mots-clés + Négations
-    6. Embedding (fallback si confiance faible)
+    3. Fuzzy matching (correction orthographique)
+    4. Négations (pas de, sans, absence de)
+    5. Règles NLU v2
+    6. Application N-grams + Mots-clés + Fuzzy + Négations
+    7. Embedding (fallback si confiance faible)
 
 """
 
@@ -136,12 +144,22 @@ SYMPTOM_TO_FIELD = {
     "méningé": "meningeal_signs",
     # Déficit neurologique
     "déficit": "neuro_deficit",
+    "deficit": "neuro_deficit",  # Sans accent
     "déficit neurologique": "neuro_deficit",
+    "deficit neurologique": "neuro_deficit",
     "déficit moteur": "neuro_deficit",
+    "deficit moteur": "neuro_deficit",
     "déficit sensitif": "neuro_deficit",
+    "deficit sensitif": "neuro_deficit",
+    "déficit sensitivo-moteur": "neuro_deficit",
+    "deficit sensitivo-moteur": "neuro_deficit",
+    "déficit focal": "neuro_deficit",
+    "deficit focal": "neuro_deficit",
     "paralysie": "neuro_deficit",
     "parésie": "neuro_deficit",
     "faiblesse": "neuro_deficit",
+    "signe de localisation": "neuro_deficit",
+    "signes de localisation": "neuro_deficit",
     # Traumatisme
     "traumatisme": "trauma",
     "trauma": "trauma",
@@ -282,8 +300,12 @@ def apply_negations_to_case(
     case_dict: Dict[str, Any],
     negations: List[NegationResult],
     detected_fields: List[str]
-) -> Tuple[Dict[str, Any], List[str]]:
+) -> Tuple[Dict[str, Any], List[str], List[Dict[str, Any]]]:
     """Applique les négations détectées au cas médical.
+
+    Les négations ont la PRIORITÉ la plus haute car elles représentent
+    une information médicale explicite (ex: "pas de déficit" est clair).
+    Elles écrasent les détections des keywords et N-grams.
 
     Args:
         case_dict: Dictionnaire du cas (from model_dump())
@@ -291,21 +313,29 @@ def apply_negations_to_case(
         detected_fields: Liste des champs déjà détectés
 
     Returns:
-        Tuple (case_dict modifié, detected_fields mis à jour)
+        Tuple (case_dict modifié, detected_fields mis à jour, détails des négations appliquées)
     """
+    applied = []
+
     for neg in negations:
-        # Ne pas écraser si déjà détecté avec une valeur True par les règles
         current_value = case_dict.get(neg.field)
-        if current_value is True:
-            # Les règles ont détecté True, on ne change pas
-            continue
 
-        # Appliquer la négation
-        case_dict[neg.field] = False
-        if neg.field not in detected_fields:
-            detected_fields.append(neg.field)
+        # Les négations explicites ont PRIORITÉ sur les keywords/ngrams
+        # car "pas de déficit" est plus spécifique que la détection du mot "déficit"
+        # On applique toujours la négation sauf si la valeur est déjà False
+        if current_value is not False:
+            case_dict[neg.field] = False
+            if neg.field not in detected_fields:
+                detected_fields.append(neg.field)
+            applied.append({
+                "field": neg.field,
+                "value": False,
+                "matched_text": neg.matched_text,
+                "confidence": neg.confidence,
+                "overrode_previous": current_value
+            })
 
-    return case_dict, detected_fields
+    return case_dict, detected_fields, applied
 
 
 # =============================================================================
@@ -335,9 +365,9 @@ NGRAM_PATTERNS: Dict[str, Dict[str, Any]] = {
         "category": "thunderclap"
     },
     "coup de poignard": {
-        "fields": {"onset": "thunderclap", "neuropathic_pattern": True},
+        "fields": {"onset": "thunderclap"},
         "confidence": 0.85,
-        "category": "thunderclap_or_neuralgia"
+        "category": "thunderclap"
     },
     "comme un coup de marteau": {
         "fields": {"onset": "thunderclap"},
@@ -451,20 +481,22 @@ NGRAM_PATTERNS: Dict[str, Dict[str, Any]] = {
 
     # -------------------------------------------------------------------------
     # NÉVRALGIES - Patterns caractéristiques
+    # Note: neuropathic_pattern n'existe pas dans HeadacheCase
+    # Ces patterns sont documentés mais ne modifient pas le case
     # -------------------------------------------------------------------------
     "décharge électrique": {
-        "fields": {"neuropathic_pattern": True, "facial_pain": True},
+        "fields": {},  # Pas de champ correspondant dans HeadacheCase
         "confidence": 0.90,
         "category": "neuralgia",
-        "note": "Névralgie du trijumeau typique"
+        "note": "Névralgie du trijumeau typique - informatif uniquement"
     },
     "éclair douloureux": {
-        "fields": {"neuropathic_pattern": True},
+        "fields": {},
         "confidence": 0.85,
         "category": "neuralgia"
     },
     "douleur fulgurante": {
-        "fields": {"neuropathic_pattern": True},
+        "fields": {},
         "confidence": 0.85,
         "category": "neuralgia"
     },
@@ -506,6 +538,110 @@ NGRAM_PATTERNS: Dict[str, Dict[str, Any]] = {
         "fields": {"recent_pl_or_peridural": True},
         "confidence": 0.75,
         "category": "positional"
+    },
+
+    # -------------------------------------------------------------------------
+    # PATTERNS TEMPORELS PROGRESSIFS
+    # -------------------------------------------------------------------------
+    "depuis plusieurs semaines": {
+        "fields": {"onset": "progressive"},
+        "confidence": 0.85,
+        "category": "temporal"
+    },
+    "depuis 3 semaines": {
+        "fields": {"onset": "progressive"},
+        "confidence": 0.85,
+        "category": "temporal"
+    },
+    "depuis 2 semaines": {
+        "fields": {"onset": "progressive"},
+        "confidence": 0.80,
+        "category": "temporal"
+    },
+    "depuis 1 mois": {
+        "fields": {"onset": "progressive"},
+        "confidence": 0.85,
+        "category": "temporal"
+    },
+    "depuis plusieurs mois": {
+        "fields": {"onset": "progressive"},
+        "confidence": 0.90,
+        "category": "temporal"
+    },
+    "céphalées matinales": {
+        "fields": {"htic_pattern": True},
+        "confidence": 0.75,
+        "category": "htic"
+    },
+
+    # -------------------------------------------------------------------------
+    # PATTERNS MIGRAINE
+    # -------------------------------------------------------------------------
+    "bat dans la tête": {
+        "fields": {"headache_profile": "migraine_like"},
+        "confidence": 0.80,
+        "category": "profile"
+    },
+    "bat dans la tempe": {
+        "fields": {"headache_profile": "migraine_like"},
+        "confidence": 0.80,
+        "category": "profile"
+    },
+    "douleur qui bat": {
+        "fields": {"headache_profile": "migraine_like"},
+        "confidence": 0.75,
+        "category": "profile"
+    },
+
+    # -------------------------------------------------------------------------
+    # SIGNES MÉNINGÉS ADDITIONNELS
+    # -------------------------------------------------------------------------
+    "nuque raide": {
+        "fields": {"meningeal_signs": True},
+        "confidence": 0.90,
+        "category": "meningeal"
+    },
+    "un peu raide": {
+        "fields": {"meningeal_signs": True},
+        "confidence": 0.70,
+        "category": "meningeal",
+        "note": "Signe méningé discret"
+    },
+
+    # -------------------------------------------------------------------------
+    # NÉVRALGIES ADDITIONNELLES
+    # Note: informatif uniquement, pas de champ HeadacheCase correspondant
+    # -------------------------------------------------------------------------
+    "en décharge électrique": {
+        "fields": {},
+        "confidence": 0.90,
+        "category": "neuralgia"
+    },
+    "décharges électriques": {
+        "fields": {},
+        "confidence": 0.90,
+        "category": "neuralgia"
+    },
+
+    # -------------------------------------------------------------------------
+    # PATTERNS CHRONIQUES / PROGRESSIFS
+    # Note: Les patterns avec durée longue (>3 mois) indiquent chronic
+    # Les patterns "quotidiennes" sont très spécifiques à la chronicité
+    # -------------------------------------------------------------------------
+    "depuis 6 mois": {
+        "fields": {"onset": "chronic"},  # > 3 mois = chronic
+        "confidence": 0.75,  # Confiance moyenne car peut être ambigu
+        "category": "temporal"
+    },
+    "depuis plusieurs années": {
+        "fields": {"onset": "chronic"},
+        "confidence": 0.90,
+        "category": "temporal"
+    },
+    "céphalées quotidiennes": {
+        "fields": {"onset": "chronic"},
+        "confidence": 0.90,  # Très spécifique à la chronicité
+        "category": "temporal"
     },
 }
 
@@ -734,10 +870,10 @@ KEYWORD_INDEX: Dict[str, List[Dict[str, Any]]] = {
     # HTIC - Hypertension intracrânienne
     # -------------------------------------------------------------------------
     "vomissements": [
-        {"field": "htic_pattern", "value": True, "weight": 0.60}  # Poids modéré seul
+        {"field": "htic_pattern", "value": True, "weight": 0.70}  # Poids augmenté, souvent associé à HTIC
     ],
     "vomissement": [
-        {"field": "htic_pattern", "value": True, "weight": 0.60}
+        {"field": "htic_pattern", "value": True, "weight": 0.70}
     ],
     "nausées": [
         {"field": "htic_pattern", "value": True, "weight": 0.40}  # Faible seul
@@ -747,6 +883,12 @@ KEYWORD_INDEX: Dict[str, List[Dict[str, Any]]] = {
     ],
     "papilloedème": [
         {"field": "htic_pattern", "value": True, "weight": 0.95}
+    ],
+    "matinales": [
+        {"field": "htic_pattern", "value": True, "weight": 0.70, "note": "Céphalées matinales évoquent HTIC"}
+    ],
+    "matinale": [
+        {"field": "htic_pattern", "value": True, "weight": 0.70}
     ],
 
     # -------------------------------------------------------------------------
@@ -1123,6 +1265,259 @@ def apply_keywords_to_case(
     return case_dict, detected_fields, applied
 
 
+# =============================================================================
+# SYSTÈME DE FUZZY MATCHING / CORRECTION ORTHOGRAPHIQUE
+# =============================================================================
+
+# Dictionnaire des termes médicaux critiques avec leurs variantes/fautes courantes
+# Format: terme_correct → liste de variantes acceptées (fautes courantes)
+MEDICAL_TERMS_DICTIONARY: Dict[str, str] = {
+    # Termes corrects (clés de KEYWORD_INDEX) - le système ajoutera automatiquement
+    # les variantes fuzzy basées sur la distance de Levenshtein
+}
+
+# Liste des termes médicaux critiques pour le fuzzy matching
+# Ces termes seront utilisés comme référence pour corriger les fautes
+CRITICAL_MEDICAL_TERMS: List[str] = [
+    # Onset / Mode de début
+    "brutale", "brutal", "soudaine", "soudain", "progressive", "progressif",
+    "foudroyante", "explosive", "subite", "insidieuse",
+    # Fièvre
+    "fièvre", "fébrile", "fiévreux", "fiévreuse", "hyperthermie", "pyrexie",
+    "apyrétique", "apyrexie",
+    # Signes méningés
+    "méningé", "méningée", "méningite", "photophobie", "phonophobie",
+    # Déficit neurologique
+    "déficit", "déficitaire", "paralysie", "parésie", "hémiplégie",
+    "hémiparésie", "aphasie", "dysarthrie", "diplopie", "ataxie",
+    "paresthésies", "paresthésie", "engourdissement", "fourmillements",
+    # HTIC
+    "vomissements", "vomissement", "nausées", "nausée", "papilloedème",
+    # Traumatisme
+    "traumatisme", "trauma", "traumatique", "chute", "accident",
+    # Convulsions
+    "convulsion", "convulsions", "convulsif", "épilepsie", "épileptique",
+    "comitial", "comitiale",
+    # Grossesse
+    "enceinte", "grossesse", "parturiente", "accouchement", "post-partum",
+    "postpartum", "péridural", "péridurale",
+    # Immunosuppression
+    "immunodéprimé", "immunodéprimée", "immunosuppression", "immunosupprimé",
+    "chimiothérapie", "greffe", "greffé", "greffée", "corticothérapie",
+    # Anticoagulation
+    "anticoagulant", "anticoagulants", "anticoagulé", "anticoagulée",
+    "coumadine", "warfarine", "héparine",
+    # Profils céphalée
+    "pulsatile", "pulsatilité", "lancinante", "lancinant",
+    "oppressif", "oppressive", "constrictif", "constrictive",
+    # Névralgies
+    "névralgie", "névralgique", "trijumeau", "électrique", "brûlure", "brûlante",
+    # Termes généraux céphalées
+    "céphalée", "céphalées", "migraine", "migraineux", "migraineuse",
+    # Âge
+    "octogénaire", "septuagénaire", "sexagénaire", "quinquagénaire",
+]
+
+
+def levenshtein_distance(s1: str, s2: str) -> int:
+    """Calcule la distance de Levenshtein entre deux chaînes.
+
+    La distance de Levenshtein est le nombre minimum d'éditions
+    (insertions, suppressions, substitutions) pour transformer s1 en s2.
+
+    Args:
+        s1: Première chaîne
+        s2: Deuxième chaîne
+
+    Returns:
+        Distance de Levenshtein (entier >= 0)
+    """
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            # Coût: 0 si caractères identiques, 1 sinon
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+
+    return previous_row[-1]
+
+
+def similarity_ratio(s1: str, s2: str) -> float:
+    """Calcule un ratio de similarité entre deux chaînes (0.0 à 1.0).
+
+    Basé sur la distance de Levenshtein normalisée.
+
+    Args:
+        s1: Première chaîne
+        s2: Deuxième chaîne
+
+    Returns:
+        Ratio de similarité (1.0 = identique, 0.0 = totalement différent)
+    """
+    if not s1 and not s2:
+        return 1.0
+    if not s1 or not s2:
+        return 0.0
+
+    distance = levenshtein_distance(s1.lower(), s2.lower())
+    max_len = max(len(s1), len(s2))
+
+    return 1.0 - (distance / max_len)
+
+
+@dataclass
+class FuzzyMatch:
+    """Résultat d'une correction fuzzy."""
+    original: str  # Mot original (potentiellement mal orthographié)
+    corrected: str  # Mot corrigé
+    similarity: float  # Score de similarité (0.0-1.0)
+    position: int  # Position dans le texte
+
+    def __hash__(self):
+        return hash((self.original, self.corrected, self.position))
+
+    def __eq__(self, other):
+        if not isinstance(other, FuzzyMatch):
+            return False
+        return (self.original == other.original and
+                self.corrected == other.corrected and
+                self.position == other.position)
+
+
+def fuzzy_correct_text(
+    text: str,
+    min_similarity: float = 0.75,
+    min_word_length: int = 4
+) -> Tuple[str, List[FuzzyMatch]]:
+    """Corrige les fautes d'orthographe dans le texte médical.
+
+    Utilise le fuzzy matching pour identifier et corriger les mots
+    mal orthographiés qui ressemblent à des termes médicaux critiques.
+
+    Args:
+        text: Texte à corriger
+        min_similarity: Seuil minimum de similarité (défaut: 0.80)
+        min_word_length: Longueur minimum des mots à corriger (défaut: 4)
+
+    Returns:
+        Tuple (texte corrigé, liste des corrections effectuées)
+
+    Examples:
+        >>> corrected, matches = fuzzy_correct_text("Patient avec fievre et cephalé")
+        >>> corrected
+        'Patient avec fièvre et céphalée'
+        >>> matches[0].original
+        'fievre'
+        >>> matches[0].corrected
+        'fièvre'
+    """
+    corrections = []
+    text_lower = text.lower()
+    words = re.findall(r'\b[\w-]+\b', text_lower)
+
+    # Pour chaque mot du texte
+    for word in words:
+        # Ignorer les mots trop courts
+        if len(word) < min_word_length:
+            continue
+
+        # Ignorer si le mot est déjà dans le dictionnaire
+        if word in KEYWORD_INDEX or word in CRITICAL_MEDICAL_TERMS:
+            continue
+
+        # Chercher le meilleur match dans les termes médicaux
+        best_match = None
+        best_similarity = 0.0
+
+        for term in CRITICAL_MEDICAL_TERMS:
+            # Optimisation: ignorer si la différence de longueur est trop grande
+            if abs(len(word) - len(term)) > 3:
+                continue
+
+            sim = similarity_ratio(word, term)
+
+            if sim >= min_similarity and sim > best_similarity:
+                best_similarity = sim
+                best_match = term
+
+        # Si on a trouvé une correction valide
+        if best_match and best_match != word:
+            # Trouver la position dans le texte original
+            pattern = r'\b' + re.escape(word) + r'\b'
+            match = re.search(pattern, text_lower)
+            position = match.start() if match else 0
+
+            corrections.append(FuzzyMatch(
+                original=word,
+                corrected=best_match,
+                similarity=best_similarity,
+                position=position
+            ))
+
+    # Appliquer les corrections au texte
+    corrected_text = text
+    # Trier par position décroissante pour éviter les décalages d'index
+    corrections.sort(key=lambda c: c.position, reverse=True)
+
+    for correction in corrections:
+        # Remplacer en préservant la casse du premier caractère si possible
+        pattern = r'\b' + re.escape(correction.original) + r'\b'
+
+        def replace_preserve_case(match):
+            original = match.group(0)
+            replacement = correction.corrected
+            if original[0].isupper():
+                return replacement.capitalize()
+            return replacement
+
+        corrected_text = re.sub(pattern, replace_preserve_case, corrected_text, flags=re.IGNORECASE)
+
+    # Re-trier par position croissante pour le retour
+    corrections.sort(key=lambda c: c.position)
+
+    return corrected_text, corrections
+
+
+def apply_fuzzy_corrections(
+    text: str,
+    min_similarity: float = 0.75
+) -> Tuple[str, List[Dict[str, Any]]]:
+    """Applique les corrections fuzzy et retourne les métadonnées.
+
+    Wrapper autour de fuzzy_correct_text pour intégration dans le pipeline.
+
+    Args:
+        text: Texte à corriger
+        min_similarity: Seuil de similarité (défaut: 0.80)
+
+    Returns:
+        Tuple (texte corrigé, liste des corrections avec détails)
+    """
+    corrected_text, corrections = fuzzy_correct_text(text, min_similarity)
+
+    corrections_metadata = [
+        {
+            "original": c.original,
+            "corrected": c.corrected,
+            "similarity": round(c.similarity, 3),
+            "position": c.position
+        }
+        for c in corrections
+    ]
+
+    return corrected_text, corrections_metadata
+
+
 def apply_ngrams_to_case(
     case_dict: Dict[str, Any],
     ngram_matches: List[NgramMatch],
@@ -1130,8 +1525,13 @@ def apply_ngrams_to_case(
 ) -> Tuple[Dict[str, Any], List[str], List[Dict[str, Any]]]:
     """Applique les n-grams détectés au cas médical.
 
-    Les n-grams ont priorité sur l'embedding mais pas sur les règles
-    qui ont déjà détecté une valeur.
+    Les n-grams sont des expressions composées à fort sens médical spécifique.
+    Ils peuvent OVERRIDER les détections des règles pour certains champs
+    car ils sont plus précis (ex: "en étau" est spécifique à tension_like).
+
+    Champs où les N-grams peuvent overrider les règles:
+    - headache_profile: les N-grams comme "en étau" sont plus spécifiques
+    - onset: les expressions comme "coup de tonnerre" sont pathognomoniques
 
     Args:
         case_dict: Dictionnaire du cas
@@ -1143,15 +1543,27 @@ def apply_ngrams_to_case(
     """
     applied = []
 
+    # Champs où les N-grams à haute confiance peuvent overrider
+    NGRAM_OVERRIDE_FIELDS = {"headache_profile", "onset"}
+
     for match in ngram_matches:
         for field, value in match.fields.items():
             current_value = case_dict.get(field)
 
             # Appliquer si:
             # - Le champ n'a pas de valeur
-            # - Ou la valeur actuelle est "unknown"
-            # - Ou le champ n'est pas encore dans detected_fields
-            if current_value is None or current_value == "unknown" or field not in detected_fields:
+            # - La valeur actuelle est "unknown"
+            # - Le champ n'est pas encore dans detected_fields
+            # - OU (le champ est dans NGRAM_OVERRIDE_FIELDS ET confiance >= 0.80)
+            should_apply = (
+                current_value is None or
+                current_value == "unknown" or
+                field not in detected_fields or
+                (field in NGRAM_OVERRIDE_FIELDS and match.confidence >= 0.80)
+            )
+
+            if should_apply:
+                old_value = current_value
                 case_dict[field] = value
                 if field not in detected_fields:
                     detected_fields.append(field)
@@ -1162,7 +1574,8 @@ def apply_ngrams_to_case(
                     "pattern": match.pattern,
                     "confidence": match.confidence,
                     "category": match.category,
-                    "note": match.note
+                    "note": match.note,
+                    "overrode_previous": old_value if old_value != value else None
                 })
 
     return case_dict, detected_fields, applied
@@ -1261,14 +1674,15 @@ class HybridNLU:
         """Analyse hybride complète avec détails d'enrichissement.
 
         Pipeline:
-            0. Détection des N-grams (expressions composées prioritaires)
-            0.5. Détection des mots-clés (index inversé)
-            1. Détection des négations
-            2. Analyse par règles (NLU v2)
-            3. Application des N-grams (haute priorité)
-            3.5. Application des mots-clés (priorité moyenne)
-            4. Application des négations
-            5. Enrichissement par embedding (si nécessaire)
+            0. Correction orthographique (fuzzy matching)
+            1. Détection des N-grams (expressions composées prioritaires)
+            2. Détection des mots-clés (index inversé)
+            3. Détection des négations
+            4. Analyse par règles (NLU v2)
+            5. Application des N-grams (haute priorité)
+            6. Application des mots-clés (priorité moyenne)
+            7. Application des négations
+            8. Enrichissement par embedding (si nécessaire)
 
         Args:
             text: Texte médical libre
@@ -1276,21 +1690,35 @@ class HybridNLU:
         Returns:
             HybridResult avec case, metadata, et détails d'enrichissement
         """
-        # ÉTAPE 0: Détection des N-grams (expressions composées)
+        # ÉTAPE 0: Correction orthographique (fuzzy matching)
+        # Corrige les fautes de frappe AVANT toute autre analyse
+        corrected_text, fuzzy_corrections = apply_fuzzy_corrections(text)
+
+        # Utiliser le texte corrigé pour toutes les étapes suivantes
+        working_text = corrected_text if fuzzy_corrections else text
+
+        # ÉTAPE 1: Détection des N-grams (expressions composées)
         # Fait AVANT tout car ces expressions ont un sens médical fort
-        ngram_matches = detect_ngrams(text)
+        ngram_matches = detect_ngrams(working_text)
 
-        # ÉTAPE 0.5: Détection des mots-clés (index inversé)
+        # ÉTAPE 2: Détection des mots-clés (index inversé)
         # Complète les N-grams avec les mots simples à forte valeur sémantique
-        keyword_matches = detect_keywords(text)
+        keyword_matches = detect_keywords(working_text)
 
-        # ÉTAPE 1: Détection des négations
-        negations, text_without_negations = detect_negations(text)
+        # ÉTAPE 3: Détection des négations
+        negations, text_without_negations = detect_negations(working_text)
 
-        # ÉTAPE 2: Analyse par règles (Layer 1)
-        case, metadata = self.rule_nlu.parse_free_text_to_case(text)
+        # ÉTAPE 4: Analyse par règles (Layer 1)
+        # On passe le texte corrigé pour que les règles bénéficient des corrections
+        case, metadata = self.rule_nlu.parse_free_text_to_case(working_text)
 
-        # ÉTAPE 3: Appliquer les N-grams détectés
+        # Ajouter les métadonnées de correction orthographique
+        if fuzzy_corrections:
+            metadata["fuzzy_corrections"] = fuzzy_corrections
+            metadata["original_text"] = text
+            metadata["corrected_text"] = corrected_text
+
+        # ÉTAPE 5: Appliquer les N-grams détectés
         # Les N-grams ont la priorité la plus haute (expressions médicales spécifiques)
         if ngram_matches:
             case_dict = case.model_dump()
@@ -1310,7 +1738,7 @@ class HybridNLU:
             if ngram_applied:
                 metadata["ngrams_applied"] = ngram_applied
 
-        # ÉTAPE 3.5: Appliquer les mots-clés détectés
+        # ÉTAPE 6: Appliquer les mots-clés détectés
         # Les mots-clés ont priorité moyenne (après N-grams, avant embedding)
         if keyword_matches:
             case_dict = case.model_dump()
@@ -1330,12 +1758,13 @@ class HybridNLU:
             if keywords_applied:
                 metadata["keywords_applied"] = keywords_applied
 
-        # ÉTAPE 4: Appliquer les négations détectées
+        # ÉTAPE 7: Appliquer les négations détectées
+        # Les négations ont PRIORITÉ sur les keywords car elles sont explicites
         if negations:
             case_dict = case.model_dump()
             detected_fields = metadata.get("detected_fields", []).copy()
 
-            case_dict, detected_fields = apply_negations_to_case(
+            case_dict, detected_fields, negations_applied = apply_negations_to_case(
                 case_dict, negations, detected_fields
             )
 
@@ -1346,12 +1775,14 @@ class HybridNLU:
                 {"field": n.field, "matched_text": n.matched_text, "confidence": n.confidence}
                 for n in negations
             ]
+            if negations_applied:
+                metadata["negations_applied"] = negations_applied
 
         # Par défaut, pas d'enrichissement embedding
         hybrid_enhanced = False
         enhancement_details = None
 
-        # ÉTAPE 5: Vérifier si enrichissement embedding nécessaire
+        # ÉTAPE 8: Vérifier si enrichissement embedding nécessaire
         # On utilise le texte SANS négations pour l'embedding
         if self._should_use_embedding(metadata):
             # Enrichir avec embedding (texte sans négations pour éviter faux positifs)
@@ -1361,12 +1792,15 @@ class HybridNLU:
             hybrid_enhanced = True
 
             # Mettre à jour métadonnées
-            metadata["hybrid_mode"] = "rules+ngrams+keywords+embedding"
+            metadata["hybrid_mode"] = "fuzzy+rules+ngrams+keywords+embedding"
             metadata["embedding_used"] = True
             metadata["enhancement_details"] = enhancement_details
         else:
             # Déterminer le mode utilisé
-            modes = ["rules"]
+            modes = []
+            if fuzzy_corrections:
+                modes.append("fuzzy")
+            modes.append("rules")
             if ngram_matches:
                 modes.append("ngrams")
             if keyword_matches:
