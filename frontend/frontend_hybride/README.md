@@ -1,16 +1,80 @@
-# React + Vite
+# Frontend Hybride - Assistant Medical
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend React + Tauri pour l'assistant d'evaluation des cephalees.
 
-Currently, two official plugins are available:
+## Prerequis
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 18+
+- npm ou yarn
+- Rust (pour Tauri) - [Installation Rust](https://www.rust-lang.org/tools/install)
 
-## React Compiler
+## Installation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Installer les dependances npm
 
-## Expanding the ESLint configuration
+```bash
+cd frontend/frontend_hybride
+npm install
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+**Dependances Tauri requises :**
+- `@tauri-apps/api` - API principale Tauri
+- `@tauri-apps/cli` - CLI Tauri
+- `@tauri-apps/plugin-dialog` - Dialogues systeme (sauvegarde fichiers)
+- `@tauri-apps/plugin-fs` - Acces au systeme de fichiers
+
+Ces dependances sont declarees dans `package.json` et seront installees automatiquement avec `npm install`.
+
+### 2. Configurer Tauri (si nouveau clone)
+
+Si les plugins Tauri ne fonctionnent pas apres `npm install`, reinstallez-les explicitement :
+
+```bash
+npm install @tauri-apps/plugin-dialog @tauri-apps/plugin-fs
+```
+
+## Lancement
+
+### Mode developpement (web uniquement)
+
+```bash
+npm run dev
+```
+
+### Mode Tauri (application desktop)
+
+```bash
+npm run tauri
+```
+
+## Structure
+
+```
+frontend_hybride/
+├── src/
+│   ├── App.jsx          # Composant principal
+│   ├── main.jsx         # Point d'entree React
+│   └── App.css          # Styles
+├── src-tauri/           # Configuration Tauri (Rust)
+├── package.json         # Dependances npm
+└── vite.config.js       # Configuration Vite
+```
+
+## Problemes frequents
+
+### Erreur "Failed to resolve import @tauri-apps/plugin-dialog"
+
+**Cause :** Les plugins Tauri ne sont pas installes.
+
+**Solution :**
+```bash
+npm install @tauri-apps/plugin-dialog @tauri-apps/plugin-fs
+```
+
+### Erreur de compilation Rust
+
+**Cause :** Rust n'est pas installe ou les plugins Tauri ne sont pas configures cote Rust.
+
+**Solution :**
+1. Installer Rust : https://www.rust-lang.org/tools/install
+2. Verifier `src-tauri/Cargo.toml` contient les plugins necessaires
