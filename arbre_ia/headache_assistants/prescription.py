@@ -97,145 +97,183 @@ def _format_prescription(
     recommendation: ImagingRecommendation,
     doctor_name: str
 ) -> str:
-    """Formate le contenu de l'ordonnance.
-    
+    """Formate le contenu de l'ordonnance au format français officiel.
+
     Args:
         case: Cas clinique
         recommendation: Recommandation d'imagerie
         doctor_name: Nom du prescripteur
-        
+
     Returns:
         Contenu formaté de l'ordonnance
     """
     date_str = datetime.now().strftime("%d/%m/%Y")
-    
-    # En-tête
-    lines = [
-        "="*70,
-        "ORDONNANCE MÉDICALE",
-        "="*70,
-        "",
-        f"Date: {date_str}",
-        f"Prescripteur: {doctor_name}",
-        "",
-        "-"*70,
-        "INFORMATIONS PATIENT",
-        "-"*70,
-        f"Âge: {case.age} ans",
-        f"Sexe: {_format_sex(case.sex)}",
-        "",
-    ]
-    
-    # Contexte clinique
-    if case.pregnancy_postpartum:
-        lines.append("CONTEXTE: PATIENTE ENCEINTE OU POST-PARTUM")
-        lines.append("")
-    
-    # Indications cliniques
+    age_str = f"{case.age} ans" if case.age is not None else "Non renseigné"
+    sex_str = _format_sex(case.sex)
+
+    # Largeur de l'ordonnance (simulant A5/ordonnancier)
+    width = 60
+
+    lines = []
+
+    # ══════════════════════════════════════════════════════════════════════
+    # EN-TÊTE MÉDECIN (coin supérieur gauche)
+    # ══════════════════════════════════════════════════════════════════════
     lines.extend([
-        "-"*70,
-        "INDICATION CLINIQUE",
-        "-"*70,
-        _format_clinical_indication(case),
-        "",
+        "┌" + "─" * (width - 2) + "┐",
+        "│" + " " * (width - 2) + "│",
+        "│" + f"  {doctor_name}".ljust(width - 2) + "│",
+        "│" + "  Médecin".ljust(width - 2) + "│",
+        "│" + "  N° RPPS : _______________".ljust(width - 2) + "│",
+        "│" + "  ".ljust(width - 2) + "│",
+        "│" + "  Adresse du cabinet :".ljust(width - 2) + "│",
+        "│" + "  ______________________________".ljust(width - 2) + "│",
+        "│" + "  ______________________________".ljust(width - 2) + "│",
+        "│" + "  Tél : ____________________".ljust(width - 2) + "│",
+        "│" + " " * (width - 2) + "│",
+        "├" + "─" * (width - 2) + "┤",
     ])
-    
+
+    # ══════════════════════════════════════════════════════════════════════
+    # DATE ET LIEU
+    # ══════════════════════════════════════════════════════════════════════
+    lines.extend([
+        "│" + " " * (width - 2) + "│",
+        "│" + f"  Le {date_str}".ljust(width - 2) + "│",
+        "│" + " " * (width - 2) + "│",
+    ])
+
+    # ══════════════════════════════════════════════════════════════════════
+    # INFORMATIONS PATIENT
+    # ══════════════════════════════════════════════════════════════════════
+    lines.extend([
+        "│" + "  PATIENT :".ljust(width - 2) + "│",
+        "│" + "  Nom : ____________________".ljust(width - 2) + "│",
+        "│" + "  Prénom : _________________".ljust(width - 2) + "│",
+        "│" + f"  Âge : {age_str}".ljust(width - 2) + "│",
+        "│" + f"  Sexe : {sex_str}".ljust(width - 2) + "│",
+    ])
+
+    # Contexte grossesse si applicable
+    if case.pregnancy_postpartum:
+        trimester_str = f"T{case.pregnancy_trimester}" if case.pregnancy_trimester else ""
+        lines.append("│" + f"  Grossesse : Oui {trimester_str}".ljust(width - 2) + "│")
+
+    lines.extend([
+        "│" + " " * (width - 2) + "│",
+        "├" + "─" * (width - 2) + "┤",
+    ])
+
+    # ══════════════════════════════════════════════════════════════════════
+    # CORPS DE L'ORDONNANCE
+    # ══════════════════════════════════════════════════════════════════════
+    lines.extend([
+        "│" + " " * (width - 2) + "│",
+        "│" + "           ORDONNANCE".center(width - 2) + "│",
+        "│" + " " * (width - 2) + "│",
+    ])
+
     # Examens prescrits
-    lines.extend([
-        "-"*70,
-        "EXAMENS DEMANDÉS",
-        "-"*70,
-    ])
-    
     if recommendation.imaging and "aucun" not in recommendation.imaging:
-        for i, exam in enumerate(recommendation.imaging, 1):
-            lines.append(f"{i}. {_format_exam_name(exam)}")
+        for exam in recommendation.imaging:
+            exam_name = _format_exam_name(exam)
+            lines.append("│" + f"  • {exam_name}".ljust(width - 2) + "│")
+        lines.append("│" + " " * (width - 2) + "│")
+
+        # Degré d'urgence
+        urgency_text = {
+            "immediate": "EN URGENCE (dans les heures)",
+            "urgent": "URGENT (sous 24h)",
+            "delayed": "Sous 7 jours",
+            "none": "Non urgent"
+        }
+        urgency = urgency_text.get(recommendation.urgency, "")
+        if urgency:
+            lines.append("│" + f"  Délai : {urgency}".ljust(width - 2) + "│")
+            lines.append("│" + " " * (width - 2) + "│")
     else:
-        lines.append("Aucun examen d'imagerie prescrit")
-    
-    lines.append("")
-    
-    # Urgence
-    urgency_text = {
-        "immediate": "URGENCE IMMÉDIATE - À réaliser dans les heures qui suivent",
-        "urgent": "URGENCE - À réaliser dans les 24 heures",
-        "delayed": "Semi-urgent - À réaliser dans les 7 jours",
-        "none": "Non urgent"
-    }
-    
-    lines.extend([
-        "-"*70,
-        "DEGRÉ D'URGENCE",
-        "-"*70,
-        urgency_text.get(recommendation.urgency, "Non spécifié"),
-        "",
-    ])
-    
-    # Précautions et contre-indications
+        lines.extend([
+            "│" + "  Pas d'examen d'imagerie requis.".ljust(width - 2) + "│",
+            "│" + " " * (width - 2) + "│",
+        ])
+
+    # ══════════════════════════════════════════════════════════════════════
+    # RENSEIGNEMENTS CLINIQUES
+    # ══════════════════════════════════════════════════════════════════════
+    lines.append("│" + "  Renseignements cliniques :".ljust(width - 2) + "│")
+
+    clinical_info = _format_clinical_indication(case)
+    # Découper en lignes de max 54 caractères
+    for line in _wrap_text(clinical_info, width - 6):
+        lines.append("│" + f"  {line}".ljust(width - 2) + "│")
+
+    lines.append("│" + " " * (width - 2) + "│")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # PRÉCAUTIONS SPÉCIALES
+    # ══════════════════════════════════════════════════════════════════════
+    precautions = []
+
     if case.pregnancy_postpartum:
-        urgency_level = recommendation.urgency
-        lines.extend([
-            "-"*70,
-            "PRÉCAUTIONS IMPORTANTES",
-            "-"*70,
-            "PATIENTE ENCEINTE:",
-        ])
-        
-        if urgency_level == "immediate":
-            lines.extend([
-                "- URGENCE VITALE: Scanner acceptable (bénéfice > risque)",
-                "- Protection abdominale plombée, dose minimale",
-                "- IRM alternative si délai compatible avec urgence",
-                "- Scanner éviter si grossesse < 4 semaines (organogenèse)",
-            ])
-        elif urgency_level == "urgent":
-            lines.extend([
-                "- IRM acceptable en urgence (risque TVC > risque IRM)",
-                "- IRM idéale à partir 2e trimestre (> 13 sem)",
-                "- Scanner uniquement si urgence vitale ou IRM impossible",
-            ])
-        else:
-            lines.extend([
-                "- Privilégier IRM (éviter radiations scanner)",
-                "- IRM éviter 1er trimestre (< 13 sem) sauf urgence",
-                "- Scanner uniquement si urgence vitale",
-            ])
-        
-        lines.extend([
-            "- Gadolinium contre-indiqué pendant grossesse sauf urgence absolue",
-            "- Risque TVC augmenté : vigilance accrue",
-            "",
-        ])
-    elif case.sex == "F" and case.age < 50:
-        lines.extend([
-            "-"*70,
-            "PRÉCAUTIONS IMPORTANTES",
-            "-"*70,
-            "FEMME EN ÂGE DE PROCRÉER:",
-            "- Test de grossesse obligatoire avant scanner",
-            "",
-        ])
-    
-    # Renseignements cliniques pour le radiologue
+        precautions.append("⚠ Grossesse : éviter gadolinium")
+        if recommendation.urgency != "immediate":
+            precautions.append("  Privilégier IRM sans injection")
+
+    if case.sex == "F" and case.age is not None and case.age < 50 and not case.pregnancy_postpartum:
+        # Vérifier si scanner prescrit
+        has_scanner = any("scanner" in exam.lower() for exam in (recommendation.imaging or []))
+        if has_scanner:
+            precautions.append("⚠ Femme en âge de procréer :")
+            precautions.append("  Test de grossesse avant scanner")
+
+    if case.age is not None and case.age > 60:
+        has_injection = any("injection" in exam.lower() or "gadolinium" in exam.lower()
+                           for exam in (recommendation.imaging or []))
+        if has_injection:
+            precautions.append("⚠ Patient > 60 ans :")
+            precautions.append("  Vérifier fonction rénale")
+
+    if precautions:
+        lines.append("│" + "  Précautions :".ljust(width - 2) + "│")
+        for p in precautions:
+            lines.append("│" + f"  {p}".ljust(width - 2) + "│")
+        lines.append("│" + " " * (width - 2) + "│")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SIGNATURE
+    # ══════════════════════════════════════════════════════════════════════
     lines.extend([
-        "-"*70,
-        "RENSEIGNEMENTS CLINIQUES",
-        "-"*70,
-        recommendation.comment.split("\n\n")[0],  # Premier paragraphe
-        "",
+        "│" + " " * (width - 2) + "│",
+        "│" + " " * (width - 2) + "│",
+        "│" + "  Signature et cachet :".ljust(width - 2) + "│",
+        "│" + " " * (width - 2) + "│",
+        "│" + " " * (width - 2) + "│",
+        "│" + " " * (width - 2) + "│",
+        "│" + " " * (width - 2) + "│",
+        "└" + "─" * (width - 2) + "┘",
     ])
-    
-    # Signature
-    lines.extend([
-        "",
-        "-"*70,
-        "",
-        f"Signature du prescripteur: {doctor_name}",
-        "",
-        "="*70,
-    ])
-    
+
     return "\n".join(lines)
+
+
+def _wrap_text(text: str, max_width: int) -> list:
+    """Découpe un texte en lignes de largeur maximale."""
+    words = text.split()
+    lines = []
+    current_line = ""
+
+    for word in words:
+        if len(current_line) + len(word) + 1 <= max_width:
+            current_line += (" " if current_line else "") + word
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = word
+
+    if current_line:
+        lines.append(current_line)
+
+    return lines if lines else [""]
 
 
 def _format_sex(sex: str) -> str:
