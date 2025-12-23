@@ -48,8 +48,21 @@ from .base import (
     ConceptCategory,
 )
 
+# Semantic vocabulary (embedding-based matching)
+from .semantic_vocabulary import (
+    SemanticVocabulary,
+    SemanticMatch,
+    SEMANTIC_VOCABULARY,
+    create_semantic_vocabulary,
+)
+
 __all__ = [
     "DetectionResult",
     "normalize_text",
     "ConceptCategory",
+    # Semantic vocabulary
+    "SemanticVocabulary",
+    "SemanticMatch",
+    "SEMANTIC_VOCABULARY",
+    "create_semantic_vocabulary",
 ]

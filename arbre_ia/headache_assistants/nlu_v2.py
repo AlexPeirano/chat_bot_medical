@@ -79,10 +79,111 @@ Author: Medical NLU Team
 Version: 2.0 (Vocabulary-based refactoring)
 """
 
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 from datetime import datetime
 
 from .models import HeadacheCase
+
+
+# =============================================================================
+# CALCUL DE CONFIANCE AMÉLIORÉ
+# =============================================================================
+
+# Poids des champs par importance clinique (pour le calcul de confiance)
+FIELD_WEIGHTS = {
+    # Champs critiques (red flags) - poids élevé
+    "onset": 2.0,           # Mode de début très important pour urgence
+    "fever": 1.5,           # Fièvre = infection possible
+    "meningeal_signs": 2.0, # Méningite = urgence
+    "neuro_deficit": 2.0,   # Déficit = AVC/processus expansif
+    "seizure": 1.5,         # Crise = pathologie grave
+    "htic_pattern": 1.8,    # HTIC = urgence
+    # Champs importants
+    "trauma": 1.3,
+    "pregnancy_postpartum": 1.3,
+    "immunosuppression": 1.3,
+    "age": 1.0,
+    "profile": 1.0,
+    "duration_current_episode_hours": 0.8,
+    "intensity": 0.7,
+    # Champs secondaires
+    "sex": 0.3,
+    "headache_profile": 0.5,
+    "headache_location": 0.4,
+    "cancer_history": 0.8,
+    "horton_criteria": 0.8,
+    "vertigo": 0.4,
+    "tinnitus": 0.3,
+}
+
+# Champs essentiels à détecter pour un cas complet
+ESSENTIAL_FIELDS = ["onset", "age", "profile"]
+CRITICAL_RED_FLAGS = ["fever", "meningeal_signs", "neuro_deficit", "seizure", "htic_pattern"]
+
+
+def calculate_overall_confidence(
+    confidence_scores: Dict[str, float],
+    detected_fields: List[str],
+    text_length: int
+) -> float:
+    """
+    Calcule une confiance globale améliorée basée sur plusieurs facteurs.
+
+    Formule:
+        overall = (weighted_avg * 0.5) + (coverage_score * 0.3) + (completeness_bonus * 0.2)
+
+    Où:
+        - weighted_avg: Moyenne pondérée des confiances par importance clinique
+        - coverage_score: Proportion de champs essentiels détectés
+        - completeness_bonus: Bonus si beaucoup de champs détectés vs longueur du texte
+
+    Args:
+        confidence_scores: Dict des scores de confiance par champ
+        detected_fields: Liste des champs détectés
+        text_length: Longueur du texte original (en caractères)
+
+    Returns:
+        Score de confiance globale entre 0.0 et 1.0
+    """
+    if not confidence_scores:
+        return 0.0
+
+    # 1. Moyenne pondérée des confiances par importance clinique
+    weighted_sum = 0.0
+    weight_total = 0.0
+
+    for field, confidence in confidence_scores.items():
+        weight = FIELD_WEIGHTS.get(field, 0.5)  # Poids par défaut = 0.5
+        weighted_sum += confidence * weight
+        weight_total += weight
+
+    weighted_avg = weighted_sum / weight_total if weight_total > 0 else 0.0
+
+    # 2. Score de couverture des champs essentiels
+    essential_detected = sum(1 for f in ESSENTIAL_FIELDS if f in detected_fields)
+    coverage_score = essential_detected / len(ESSENTIAL_FIELDS)
+
+    # 3. Bonus de complétude (plus de champs = meilleure extraction)
+    # Normaliser par la longueur du texte (un texte court ne peut pas avoir beaucoup de champs)
+    expected_fields = min(3 + text_length // 50, 10)  # Entre 3 et 10 champs attendus
+    actual_meaningful_fields = len([f for f in detected_fields if f not in ["sex"]])
+    completeness_ratio = min(actual_meaningful_fields / expected_fields, 1.0)
+
+    # 4. Bonus si des red flags sont explicitement détectés (positifs OU négatifs)
+    red_flag_clarity = sum(1 for f in CRITICAL_RED_FLAGS if f in detected_fields) / len(CRITICAL_RED_FLAGS)
+
+    # Formule finale avec pondération
+    overall = (
+        weighted_avg * 0.45 +           # Qualité des détections
+        coverage_score * 0.25 +          # Couverture des essentiels
+        completeness_ratio * 0.15 +      # Richesse de l'extraction
+        red_flag_clarity * 0.15          # Clarté sur les red flags
+    )
+
+    # Clamp entre 0 et 1
+    return max(0.0, min(1.0, overall))
+
+
 from .medical_vocabulary import MedicalVocabulary, DetectionResult
 from .pregnancy_utils import extract_pregnancy_trimester
 from .nlu_base import (
@@ -596,10 +697,17 @@ class NLUv2:
             elif case.duration_current_episode_hours >= 2160 and case.profile == "acute":
                 contradictions.append('duration_profile_mismatch')
 
+        # Calcul de confiance amélioré
+        overall_conf = calculate_overall_confidence(
+            confidence_scores=confidence_scores,
+            detected_fields=detected_fields,
+            text_length=len(text)
+        )
+
         metadata = {
             "detected_fields": detected_fields,
             "confidence_scores": confidence_scores,
-            "overall_confidence": sum(confidence_scores.values()) / max(len(confidence_scores), 1),
+            "overall_confidence": overall_conf,
             "extraction_method": "vocabulary_based_v2",
             "timestamp": datetime.now().isoformat(),
             "original_text": text,

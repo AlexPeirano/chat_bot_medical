@@ -36,9 +36,9 @@ class TestHybridNLUBasics:
         assert result.case.fever is True
         assert result.case.meningeal_signs is True
 
-        # Note: Le mode peut être rules+keywords, rules+embedding ou rules_only selon le seuil
+        # Note: Le mode peut être rules+keywords, rules+semantic, rules+embedding ou rules_only selon le seuil
         # L'important est que les valeurs soient correctes
-        assert result.metadata["hybrid_mode"] in ["rules_only", "rules+keywords", "rules+embedding"]
+        assert result.metadata["hybrid_mode"] in ["rules_only", "rules+keywords", "rules+semantic", "rules+embedding"]
 
     def test_low_confidence_triggers_embedding(self):
         """Cas faible confiance → embedding activé."""

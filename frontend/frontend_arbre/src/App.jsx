@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./index.css";
 import { analyserTexte, getPrescription, resetConversation, getSessionLog } from "./services/analyseService";
 
@@ -8,6 +8,12 @@ export default function App() {
   const [input, setInput] = useState("");
   const [dialogueComplete, setDialogueComplete] = useState(false);
   const [modal, setModal] = useState({ open: false, title: "", content: "", type: "" });
+  const messagesEndRef = useRef(null);
+
+  // Auto-scroll vers le bas quand les messages changent
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -261,6 +267,10 @@ export default function App() {
         padding: "20px",
         maxWidth: "600px",
         margin: "0 auto",
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        boxSizing: "border-box",
       }}
     >
       <h2 style={{ textAlign: "center", marginBottom: "10px" }}>
@@ -276,7 +286,8 @@ export default function App() {
           border: "1px solid #ddd",
           borderRadius: "8px",
           padding: "10px",
-          minHeight: "180px",
+          flex: 1,
+          overflowY: "auto",
           marginBottom: "10px",
         }}
       >
@@ -302,6 +313,7 @@ export default function App() {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* input */}

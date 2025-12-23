@@ -1,16 +1,17 @@
 """
-Hybrid NLU Module - Rules + Embedding for Maximum Clinical Robustness.
+Hybrid NLU Module - Semantic Vocabulary + Rules for Maximum Clinical Robustness.
 
-This module combines rule-based NLU with semantic embedding similarity to handle
-both standard medical terminology and novel patient expressions that rules might miss.
+This module combines semantic embedding-based vocabulary matching with rule-based
+NLU for robust detection of clinical concepts, handling both standard medical
+terminology and patient vernacular.
 
 Clinical Architecture
 ---------------------
 The hybrid approach addresses a fundamental challenge in medical NLU:
-- Rules excel at standard terminology but miss creative patient expressions
-- Embeddings capture semantic similarity but lack precision for specific terms
+- Rules excel at standard terminology but miss patient vernacular
+- Semantic embeddings capture meaning even with unusual phrasing
 
-Solution: Multi-layer pipeline with priority ordering.
+Solution: Multi-layer pipeline with semantic vocabulary as primary detection.
 
 Layer Priority (Highest to Lowest)
 ----------------------------------
@@ -19,63 +20,54 @@ Layer Priority (Highest to Lowest)
    - Medical idioms: "vomissements en jet" → HTIC
    - Clinical signs: "chien de fusil" → meningeal signs
 
-2. **Keywords** (index inversé O(1))
-   - Single medical terms with strong semantic value
-   - "brutale" → onset:thunderclap, "fébrile" → fever:True
-   - Weight-based scoring for disambiguation
+2. **Semantic Vocabulary** (embedding-based matching) ← NEW
+   - 250+ medical terms with pre-computed embeddings
+   - Catches synonyms: "mal de crâne" ≈ "céphalée"
+   - Patient vernacular: "ça tape" → migraine_like
+   - Similarity threshold for precision control
 
-3. **Fuzzy Matching** (correction orthographique)
-   - Levenshtein distance for typo tolerance
-   - Critical for patient-submitted text
-   - "cephalee" → "céphalée", "fievre" → "fièvre"
-
-4. **Negations** (PRIORITY OVERRIDE)
+3. **Negations** (PRIORITY OVERRIDE)
    - French negation patterns: "pas de", "sans", "absence de"
-   - CRITICAL: Negations override keyword/n-gram positives
+   - CRITICAL: Negations override semantic matches
    - "céphalée brutale sans déficit" → neuro_deficit=False
 
-5. **Rules** (NLU v2)
+4. **Rules** (NLU v2)
    - Full vocabulary-based extraction
-   - Structured clinical profiling
-
-6. **Embedding** (fallback)
-   - Sentence-transformer similarity matching
-   - Only activated if rules have low confidence
-   - Handles novel expressions via corpus similarity
+   - Structured clinical profiling (age, duration, etc.)
 
 Clinical Safety Design
 -----------------------
 - Negations have HIGHEST priority (explicit clinical negation is definitive)
-- N-grams override rules for pathognomonic expressions (HSA indicators)
-- Embedding only enriches, never overrides rule-based red flags
-- Typo correction ensures critical terms aren't missed
+- N-grams override semantic matches for pathognomonic expressions
+- Semantic vocabulary handles patient vernacular robustly
+- Rules provide structured extraction (demographics, duration)
 
-Preprocessing
--------------
-Before embedding comparison:
-- Temporal durations removed ("depuis 3 jours" stripped)
-- Negated phrases removed from embedding input
-- Focus on symptom semantics, not temporal context
+Semantic Matching Benefits
+--------------------------
+- "mal de crâne" matches "céphalée" via embedding similarity
+- "ça tape" matches "pulsatile" → migraine_like profile
+- "super mal" matches "intense" → severe intensity
+- Handles typos and accents naturally (embedding space)
 
 Example Pipeline Flow
 --------------------
-Input: "Patiente 45a, pire mal de tête de sa vie, sans déficit, depuis 2h"
+Input: "J'ai super mal au crâne, ça tape, pas de fièvre"
 
-1. N-gram: "pire mal de tête de sa vie" → onset=thunderclap (0.95)
-2. Keywords: None additional (n-gram captured main finding)
-3. Fuzzy: No corrections needed
-4. Negation: "sans déficit" → neuro_deficit=False (PRIORITY)
-5. Rules: Extract age=45, sex=F, duration=2h, profile=acute
-6. Final: N-grams + negations applied, rules provide base case
+1. N-gram: None (no pathognomonic phrases)
+2. Semantic: "mal au crâne" → céphalée, "ça tape" → migraine_like,
+             "super mal" → severe intensity
+3. Negation: "pas de fièvre" → fever=False (PRIORITY)
+4. Rules: No additional structured data
+5. Final: semantic + negations applied
 
-Output: onset=thunderclap, neuro_deficit=False, age=45, profile=acute
+Output: headache_profile=migraine_like, intensity=severe, fever=False
 
 Performance Notes
 -----------------
 - Embedding model: all-MiniLM-L6-v2 (384-dim, fast inference)
-- Corpus: 100+ annotated medical examples (MEDICAL_EXAMPLES)
-- Embeddings pre-computed at initialization
-- Rule-based path: <50ms, Embedding path: ~200ms
+- Vocabulary: 250+ terms with pre-computed embeddings
+- Semantic matching: ~100ms (batch embedding)
+- Full pipeline: ~150-200ms
 
 Version History
 ---------------
@@ -83,8 +75,9 @@ Version History
 - v2: Temporal preprocessing for embedding
 - v3: Negation handling
 - v4: N-gram detection
-- v5: Keyword index
-- v6: Fuzzy matching (current)
+- v5: Keyword index (exact matching)
+- v6: Fuzzy matching
+- v7: Semantic vocabulary (embedding-based) ← CURRENT
 
 Author: Medical NLU Team
 """
@@ -95,12 +88,12 @@ import re
 from dataclasses import dataclass
 import warnings
 
-# Import du NLU v2 
+# Import du NLU v2
 from .nlu_v2 import NLUv2
 from .models import HeadacheCase
 from .medical_examples_corpus import MEDICAL_EXAMPLES
 
-# Lazy import de sentence-transformers 
+# Lazy import de sentence-transformers
 try:
     from sentence_transformers import SentenceTransformer
     EMBEDDING_AVAILABLE = True
@@ -110,6 +103,15 @@ except ImportError:
         "sentence-transformers non installé. NLU hybride fonctionnera en mode règles uniquement.\n"
         "Pour activer l'embedding: pip install sentence-transformers"
     )
+
+# Import SemanticVocabulary (uses sentence-transformers)
+try:
+    from .vocabulary.semantic_vocabulary import SemanticVocabulary, SemanticMatch
+    SEMANTIC_VOCAB_AVAILABLE = EMBEDDING_AVAILABLE  # Requires embedding
+except ImportError:
+    SEMANTIC_VOCAB_AVAILABLE = False
+    SemanticVocabulary = None
+    SemanticMatch = None
 
 
 def preprocess_for_embedding(text: str) -> str:
@@ -1728,19 +1730,30 @@ class HybridNLU:
             First initialization may take ~2s to load the embedding model.
             Subsequent calls reuse the cached model.
         """
-        # Layer 1: Règles 
+        # Layer 1: Rules (NLU v2)
         self.rule_nlu = NLUv2()
         self.confidence_threshold = confidence_threshold
         self.verbose = verbose
 
-        # Layer 2: Embedding 
+        # Layer 2: Semantic Vocabulary (replaces keyword matching)
+        # Only use if embedding is enabled (semantic vocab uses embedding internally)
+        self.use_semantic = SEMANTIC_VOCAB_AVAILABLE and use_embedding
+        self.semantic_vocab = None
+        if self.use_semantic:
+            self._initialize_semantic_vocabulary(embedding_model)
+
+        # Layer 3: Corpus Embedding (fallback for low confidence)
         self.use_embedding = use_embedding and EMBEDDING_AVAILABLE
         self.embedder = None
         self.example_embeddings = None
         self.examples = MEDICAL_EXAMPLES
 
-        if self.use_embedding:
+        if self.use_embedding and not self.use_semantic:
+            # Only initialize corpus embeddings if semantic vocab failed
             self._initialize_embedding(embedding_model)
+        elif self.use_embedding and self.use_semantic:
+            # Reuse embedder from semantic vocab for corpus
+            self._initialize_corpus_from_semantic()
 
     def _initialize_embedding(self, model_name: str):
         """Initialise le modèle d'embedding et pré-calcule les embeddings.
@@ -1777,6 +1790,147 @@ class HybridNLU:
         except Exception as e:
             warnings.warn(f"Erreur initialisation embedding: {e}. Mode règles uniquement.")
             self.use_embedding = False
+
+    def _initialize_semantic_vocabulary(self, model_name: str):
+        """Initialize the semantic vocabulary with pre-computed embeddings.
+
+        The semantic vocabulary provides embedding-based matching of medical
+        terms, replacing the previous keyword index approach.
+        """
+        try:
+            if self.verbose:
+                print(f"[INIT] Initializing SemanticVocabulary with '{model_name}'...")
+
+            self.semantic_vocab = SemanticVocabulary(
+                similarity_threshold=0.82,  # Higher threshold to avoid false positives (e.g., "crise" → seizure)
+                embedding_model=model_name,
+                verbose=self.verbose,
+                min_token_length=3  # Avoid matching short words like "en"
+            )
+
+            if self.verbose:
+                stats = self.semantic_vocab.get_vocabulary_stats()
+                print(f"[OK] SemanticVocabulary ready: {stats['total_terms']} terms")
+
+        except Exception as e:
+            warnings.warn(f"Erreur initialisation SemanticVocabulary: {e}. Fallback to keywords.")
+            self.use_semantic = False
+            self.semantic_vocab = None
+
+    def _initialize_corpus_from_semantic(self):
+        """Initialize corpus embeddings reusing the semantic vocab embedder.
+
+        This avoids loading the model twice when both semantic vocab and
+        corpus embedding are enabled.
+        """
+        try:
+            if self.verbose:
+                print(f"[INIT] Pré-calcul des embeddings corpus (réutilisation embedder)...")
+
+            # Reuse the embedder from semantic vocabulary
+            self.embedder = self.semantic_vocab.embedder
+
+            # Prétraiter les textes pour retirer les durées temporelles
+            texts_raw = [ex["text"] for ex in self.examples]
+            texts_preprocessed = [preprocess_for_embedding(t) for t in texts_raw]
+            self.example_texts_preprocessed = texts_preprocessed
+
+            self.example_embeddings = self.embedder.encode(
+                texts_preprocessed,
+                convert_to_numpy=True,
+                show_progress_bar=False
+            )
+
+            if self.verbose:
+                print(f"[OK] Corpus embeddings ready ({self.example_embeddings.shape})")
+
+        except Exception as e:
+            warnings.warn(f"Erreur initialisation corpus: {e}")
+            self.use_embedding = False
+
+    # Mapping for intensity string values to EVA scores
+    INTENSITY_MAP = {
+        "maximum": 10,
+        "severe": 8,
+        "moderate": 5,
+        "mild": 3
+    }
+
+    def _apply_semantic_matches(
+        self,
+        case_dict: Dict[str, Any],
+        semantic_matches: List[SemanticMatch],
+        detected_fields: List[str],
+        confidence_threshold: float = 0.55
+    ) -> Tuple[Dict[str, Any], List[str], List[Dict[str, Any]]]:
+        """Apply semantic vocabulary matches to the case.
+
+        Similar to apply_keywords_to_case but uses SemanticMatch objects
+        with their embedding-based confidence scores.
+
+        Args:
+            case_dict: Dictionary representation of HeadacheCase
+            semantic_matches: List of SemanticMatch from vocabulary matching
+            detected_fields: List of already detected field names
+            confidence_threshold: Minimum final_confidence to apply (default 0.55)
+
+        Returns:
+            Tuple of (updated case_dict, updated detected_fields, applied details)
+        """
+        applied = []
+
+        # Fields that are informational only (not in HeadacheCase model)
+        SKIP_FIELDS = {"headache_type", "vertigo"}
+
+        for match in semantic_matches:
+            # Skip if confidence too low
+            if match.final_confidence < confidence_threshold:
+                continue
+
+            # Skip informational fields that aren't in HeadacheCase
+            if match.field in SKIP_FIELDS:
+                continue
+
+            # Skip fields that don't exist in HeadacheCase
+            if match.field not in case_dict:
+                continue
+
+            # Special handling for intensity (needs int, not string)
+            value_to_apply = match.value
+            if match.field == "intensity" and isinstance(match.value, str):
+                value_to_apply = self.INTENSITY_MAP.get(match.value)
+                if value_to_apply is None:
+                    continue  # Unknown intensity value, skip
+
+            current_value = case_dict.get(match.field)
+
+            # Apply if:
+            # - Field not yet set (None)
+            # - Field is "unknown"
+            # - Field not in detected_fields
+            should_apply = (
+                current_value is None or
+                current_value == "unknown" or
+                match.field not in detected_fields
+            )
+
+            if should_apply:
+                case_dict[match.field] = value_to_apply
+                if match.field not in detected_fields:
+                    detected_fields.append(match.field)
+
+                applied.append({
+                    "field": match.field,
+                    "value": value_to_apply,
+                    "original_value": match.value if value_to_apply != match.value else None,
+                    "term": match.term,
+                    "input_token": match.input_token,
+                    "similarity": round(match.similarity, 3),
+                    "confidence": round(match.final_confidence, 3),
+                    "category": match.category
+                })
+
+        return case_dict, detected_fields, applied
 
     def parse_free_text_to_case(self, text: str) -> Tuple[HeadacheCase, Dict[str, Any]]:
         """
@@ -1865,9 +2019,16 @@ class HybridNLU:
         # Fait AVANT tout car ces expressions ont un sens médical fort
         ngram_matches = detect_ngrams(working_text)
 
-        # ÉTAPE 2: Détection des mots-clés (index inversé)
-        # Complète les N-grams avec les mots simples à forte valeur sémantique
-        keyword_matches = detect_keywords(working_text)
+        # ÉTAPE 2: Semantic vocabulary matching (replaces keyword index)
+        # Uses embedding similarity to find medical terms including synonyms
+        semantic_matches = []
+        if self.use_semantic and self.semantic_vocab:
+            semantic_matches = self.semantic_vocab.match_text(working_text)
+
+        # Fallback to keyword matching if semantic vocab not available
+        keyword_matches = []
+        if not self.use_semantic:
+            keyword_matches = detect_keywords(working_text)
 
         # ÉTAPE 3: Détection des négations
         negations, text_without_negations = detect_negations(working_text)
@@ -1902,9 +2063,35 @@ class HybridNLU:
             if ngram_applied:
                 metadata["ngrams_applied"] = ngram_applied
 
-        # ÉTAPE 6: Appliquer les mots-clés détectés
-        # Les mots-clés ont priorité moyenne (après N-grams, avant embedding)
-        if keyword_matches:
+        # ÉTAPE 6: Appliquer les semantic matches ou keywords
+        # Semantic matching a priorité moyenne (après N-grams, avant negations)
+        if semantic_matches:
+            case_dict = case.model_dump()
+            detected_fields = metadata.get("detected_fields", []).copy()
+
+            # Apply semantic matches
+            case_dict, detected_fields, semantic_applied = self._apply_semantic_matches(
+                case_dict, semantic_matches, detected_fields
+            )
+
+            # Reconstruire le cas et mettre à jour metadata
+            case = HeadacheCase(**case_dict)
+            metadata["detected_fields"] = detected_fields
+            metadata["semantic_detected"] = [
+                {
+                    "term": m.term,
+                    "input_token": m.input_token,
+                    "field": m.field,
+                    "similarity": round(m.similarity, 3),
+                    "confidence": round(m.final_confidence, 3)
+                }
+                for m in semantic_matches
+            ]
+            if semantic_applied:
+                metadata["semantic_applied"] = semantic_applied
+
+        elif keyword_matches:
+            # Fallback to keyword matching if semantic not available
             case_dict = case.model_dump()
             detected_fields = metadata.get("detected_fields", []).copy()
 
@@ -1967,7 +2154,9 @@ class HybridNLU:
             modes.append("rules")
             if ngram_matches:
                 modes.append("ngrams")
-            if keyword_matches:
+            if semantic_matches:
+                modes.append("semantic")
+            elif keyword_matches:
                 modes.append("keywords")
             metadata["hybrid_mode"] = "+".join(modes)
             metadata["embedding_used"] = False
